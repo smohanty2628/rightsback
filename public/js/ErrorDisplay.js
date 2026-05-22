@@ -243,3 +243,4 @@ function getMissingSummary(validation) {
 window.showErrorMessage = showErrorMessage;
 window.validateForm = validateForm;
 window.scrollToFirstError = scrollToFirstError;
+

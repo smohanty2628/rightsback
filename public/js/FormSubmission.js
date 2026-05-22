@@ -230,3 +230,4 @@ function scrollToTop() {
 // Export for use in HTML
 window.handleFormSubmit = handleFormSubmit;
 window.collectFormData = collectFormData;
+
