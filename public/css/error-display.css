@@ -1,0 +1,212 @@
+/* public/css/error-display.css */
+/* Rights Back App - Error Message Styling */
+
+/* Main error container */
+#error-display {
+  display: none;
+  margin: 20px auto;
+  max-width: 700px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Error message box */
+.error-message-box {
+  background: #fff5f5;
+  border: 2px solid #e53e3e;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Error header */
+.error-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.error-icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.error-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #c53030;
+}
+
+/* Error content */
+.error-content {
+  color: #742a2a;
+}
+
+.error-intro {
+  font-size: 16px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+/* Missing fields list */
+.missing-fields-list {
+  background: white;
+  border: 1px solid #fc8181;
+  border-radius: 6px;
+  padding: 16px 16px 16px 40px;
+  margin: 16px 0;
+  list-style: none;
+}
+
+.missing-fields-list li {
+  padding: 8px 0;
+  font-size: 15px;
+  line-height: 1.4;
+  color: #742a2a;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.missing-fields-list .bullet {
+  color: #e53e3e;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+/* Error guidance text */
+.error-guidance {
+  font-size: 15px;
+  margin: 16px 0;
+  font-weight: 500;
+  color: #742a2a;
+}
+
+/* Fix errors button */
+.fix-errors-btn {
+  background: #e53e3e;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.fix-errors-btn:hover {
+  background: #c53030;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(229, 62, 62, 0.3);
+}
+
+/* Form field error highlighting */
+.field-error {
+  border: 2px solid #e53e3e !important;
+  background: #fff5f5 !important;
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.field-error-text {
+  display: block;
+  color: #c53030;
+  font-size: 13px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* Success state (when validation passes) */
+.validation-success {
+  background: #f0fff4;
+  border: 2px solid #48bb78;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 20px auto;
+  max-width: 700px;
+  color: #22543d;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.validation-success::before {
+  content: "✓";
+  font-size: 24px;
+  color: #48bb78;
+  font-weight: bold;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .error-message-box {
+    padding: 16px;
+  }
+  
+  .error-header h3 {
+    font-size: 18px;
+  }
+  
+  .missing-fields-list {
+    padding: 12px 12px 12px 32px;
+  }
+  
+  .missing-fields-list li {
+    font-size: 14px;
+  }
+}
+
+/* Warning messages (for non-blocking issues) */
+.warning-message-box {
+  background: #fffbeb;
+  border: 2px solid #f59e0b;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 700px;
+}
+
+.warning-message-box .error-header h3 {
+  color: #92400e;
+}
+
+.warning-message-box .error-content {
+  color: #78350f;
+}
+
+/* Info messages */
+.info-message-box {
+  background: #eff6ff;
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 700px;
+}
+
+.info-message-box .error-header h3 {
+  color: #1e40af;
+}
+
+.info-message-box .error-content {
+  color: #1e3a8a;
+}

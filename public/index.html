@@ -1,0 +1,2454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rights Back® — Copyright Termination Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --dark:#1a1a18;--parchment:#f5f0e8;--gold:#c8b89a;--gold-dark:#a08060;
+  --ink:#2a2a26;--muted:#888882;--border:#e0dbd0;
+  --green:#15803d;--green-bg:#f0fdf4;
+  --amber:#b45309;--amber-bg:#fffbeb;
+  --blue:#1d4ed8;--blue-bg:#eff6ff;
+  --red:#be123c;--red-bg:#fff1f2;
+  --royalty-bg:#fffbeb;
+  --royalty-inner-bg:#fff7ed;
+  --royalty-border:#fbbf24;
+  --royalty-title:#b45309;
+  --royalty-icon-bg:#fde68a;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--parchment);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.6;}
+
+/* 🔴 ULTIMATE FIX: Prevent ANY flash */
+#step4{
+  background:#1a1d23!important;
+  display:none!important;
+  /* 🔴 Pre-size to prevent layout jump */
+  position:fixed;
+  top:0;
+  left:0;
+  width:100vw;
+  height:100vh;
+  opacity:0;
+}
+#step4.active{
+  display:block!important;
+  opacity:1;
+}
+
+/* Force body background to dark when Step 4 is active */
+body.processing-active{background:#1a1d23!important;overflow:hidden;}
+
+/* ERROR DISPLAY STYLES */
+#error-display {
+  display: none;
+  margin: 20px auto 30px;
+  max-width: 700px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.error-message-box {
+  background: #fff5f5;
+  border: 2px solid #e53e3e;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.error-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.error-icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.error-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #c53030;
+}
+
+.error-content {
+  color: #742a2a;
+}
+
+.error-intro {
+  font-size: 16px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.missing-fields-list {
+  background: white;
+  border: 1px solid #fc8181;
+  border-radius: 8px;
+  padding: 16px 16px 16px 40px;
+  margin: 16px 0;
+  list-style: none;
+}
+
+.missing-fields-list li {
+  padding: 8px 0;
+  font-size: 15px;
+  line-height: 1.4;
+  color: #742a2a;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.missing-fields-list .bullet {
+  color: #e53e3e;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.error-guidance {
+  font-size: 15px;
+  margin: 16px 0;
+  font-weight: 500;
+  color: #742a2a;
+}
+
+.fix-errors-btn {
+  background: #e53e3e;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.fix-errors-btn:hover {
+  background: #c53030;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(229, 62, 62, 0.3);
+}
+
+.field-error {
+  border: 2px solid #e53e3e !important;
+  background: #fff5f5 !important;
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.field-error-text {
+  display: block;
+  color: #c53030;
+  font-size: 13px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* HEADER */
+.hdr{background:var(--dark);padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.hdr-brand{display:flex;align-items:center;gap:12px;}
+.hdr-logo{width:32px;height:32px;border-radius:7px;background:var(--parchment);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--dark);}
+.hdr-title{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;color:var(--parchment);}
+.hdr-divider{width:1px;height:20px;background:#333330;margin:0 6px;}
+.hdr-tagline{font-family:'DM Mono',monospace;font-size:9px;color:#555550;letter-spacing:.14em;text-transform:uppercase;}
+.step-indicator{display:flex;align-items:center;gap:6px;}
+.step-dot{width:7px;height:7px;border-radius:50%;background:#333330;transition:background .3s;}
+.step-dot.active{background:var(--gold);}
+.step-dot.done{background:var(--green);}
+@media(max-width:600px){.hdr{padding:0 20px;}.hdr-tagline,.hdr-divider{display:none;}}
+
+/* MAIN */
+.main{max-width:720px;margin:0 auto;padding:44px 24px 60px;}
+
+/* PROGRESS */
+.progress-bar-wrap{height:2px;background:var(--border);margin-bottom:36px;overflow:hidden;}
+.progress-bar-fill{height:100%;background:var(--dark);transition:width .5s cubic-bezier(.4,0,.2,1);}
+
+/* STEPS */
+.step{display:none;}
+.step.active{display:block;animation:fadeUp .3s cubic-bezier(.4,0,.2,1);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+/* TYPE */
+.section-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+h1.page-title{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;line-height:1.2;margin-bottom:10px;color:var(--dark);}
+h2.page-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;line-height:1.3;margin-bottom:8px;color:var(--dark);}
+.page-desc{color:var(--muted);font-size:14px;line-height:1.65;margin-bottom:28px;}
+
+/* CARDS */
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:32px 36px;margin-bottom:20px;}
+@media(max-width:600px){.card{padding:22px 18px;}}
+.card-section{margin-bottom:22px;padding-bottom:22px;border-bottom:1px solid #f0ece4;}
+.card-section:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+.cs-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+
+/* NOTICES */
+.notice{border-radius:8px;padding:12px 16px;font-size:13px;margin-bottom:18px;line-height:1.5;}
+.notice-amber{background:var(--amber-bg);border:1px solid #fbbf24;color:var(--amber);}
+.notice-blue{background:var(--blue-bg);border:1px solid #93c5fd;color:var(--blue);}
+.notice-green{background:var(--green-bg);border:1px solid #86efac;color:var(--green);}
+.notice-red{background:var(--red-bg);border:1px solid #fca5a5;color:var(--red);}
+
+/* FORM */
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:13px;font-weight:500;color:var(--ink);margin-bottom:5px;}
+.req{color:var(--red);margin-left:1px;}
+.opt{color:var(--muted);font-weight:400;font-size:11px;margin-left:4px;font-style:italic;}
+.field input,.field select,.field textarea{
+  width:100%;padding:9px 13px;border:1.5px solid var(--border);border-radius:8px;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:#fff;
+  transition:border-color .2s,box-shadow .2s;outline:none;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold-dark);box-shadow:0 0 0 3px rgba(160,128,96,.1);}
+.field input.v-ok{border-color:var(--green);}
+.field input.v-err{border-color:var(--red);}
+.fhint{font-size:11px;margin-top:4px;}
+.fhint-err{color:var(--red);}
+.fhint-ok{color:var(--green);}
+.fhint-info{color:var(--muted);}
+.field textarea{min-height:76px;resize:vertical;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:520px){.field-row{grid-template-columns:1fr;}}
+.checkbox-wrap{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;}
+.checkbox-wrap input{margin-top:3px;flex-shrink:0;width:16px;height:16px;accent-color:var(--dark);}
+.checkbox-wrap input:disabled{opacity:0.4;cursor:not-allowed;}
+.checkbox-wrap label{font-size:13px;color:var(--ink);line-height:1.5;}
+.radio-group{display:flex;flex-wrap:wrap;gap:7px;margin-top:5px;}
+.radio-opt{display:flex;align-items:center;gap:6px;padding:6px 13px;border:1.5px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;transition:all .15s;}
+.radio-opt:hover{border-color:var(--gold-dark);}
+.radio-opt.selected{border-color:var(--dark);background:#f9f8f5;}
+.helper{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;}
+
+/* LOOKUP */
+.lookup-row{display:flex;gap:8px;}
+.lookup-row input{flex:1;}
+.btn-lookup{padding:9px 14px;background:var(--dark);color:var(--parchment);border:none;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .15s;flex-shrink:0;}
+.btn-lookup:hover{background:#2c2c28;}
+.btn-lookup:disabled{background:#888;cursor:not-allowed;}
+.lookup-result{margin-top:8px;font-size:12px;border-radius:7px;padding:10px 13px;display:none;}
+.lookup-result.found{background:var(--green-bg);border:1px solid #86efac;}
+.lookup-result.notfound{background:var(--amber-bg);border:1px solid #fbbf24;}
+.lookup-result.error{background:var(--red-bg);border:1px solid #fca5a5;}
+
+/* SONG CARD */
+.song-card{border:1px solid var(--border);border-radius:10px;padding:22px 26px;margin-bottom:14px;background:#fdfcf9;transition:border-color .2s;}
+.song-card:hover{border-color:var(--gold);}
+.song-card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.song-num{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;}
+.btn-remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:4px 8px;border-radius:5px;transition:color .15s;}
+.btn-remove:hover{color:var(--red);}
+.sc-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;margin-top:4px;}
+.divider{border:none;border-top:1px solid #f0ece4;margin:16px 0;}
+.btn-add-song{display:flex;align-items:center;gap:8px;padding:11px 18px;border:1.5px dashed var(--border);border-radius:8px;background:none;cursor:pointer;font-size:13px;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .2s;width:100%;margin-bottom:8px;}
+.btn-add-song:hover{border-color:var(--gold-dark);color:var(--ink);background:#fff;}
+
+/* BUTTONS */
+.btn-row{display:flex;gap:12px;justify-content:flex-end;margin-top:24px;}
+.btn{padding:10px 26px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;border:1.5px solid transparent;}
+.btn-primary{background:var(--dark);color:var(--parchment);}
+.btn-primary:hover{background:#2c2c28;transform:translateY(-1px);}
+.btn-primary:disabled{background:#888;cursor:not-allowed;transform:none;}
+.btn-secondary{background:#fff;color:var(--ink);border-color:var(--border);}
+.btn-secondary:hover{border-color:var(--ink);}
+.btn-gold{background:var(--gold-dark);color:#fff;}
+.btn-gold:hover{background:#8a6a4a;transform:translateY(-1px);}
+.btn-gold:disabled{background:#bbb;cursor:not-allowed;transform:none;}
+
+/* WELCOME */
+.check-bullet{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}
+.check-circle{width:20px;height:20px;border-radius:50%;background:var(--green-bg);border:1px solid #86efac;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;font-size:10px;color:var(--green);}
+
+/* RESULTS */
+.result-card{border-radius:10px;padding:20px 24px;margin-bottom:14px;animation:fadeUp .3s ease;}
+.result-card.s203{background:#f0fdf4;border:1px solid #86efac;}
+.result-card.s304{background:var(--blue-bg);border:1px solid #93c5fd;}
+.result-card.needs-review{background:var(--amber-bg);border:1px solid #fbbf24;}
+.result-card.missed{background:var(--red-bg);border:1px solid #fca5a5;}
+.result-song-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;margin-bottom:4px;}
+.result-regime{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;}
+.result-regime.s203{color:var(--green);}
+.result-regime.s304{color:var(--blue);}
+.result-regime.needs-review{color:var(--amber);}
+.result-regime.missed{color:var(--red);}
+.dates-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;}
+@media(max-width:500px){.dates-grid{grid-template-columns:1fr;}}
+.date-item{background:rgba(255,255,255,.7);border-radius:7px;padding:9px 13px;}
+.date-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;font-family:'DM Mono',monospace;}
+.date-value{font-size:14px;font-weight:500;color:var(--ink);}
+.status-flag{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:12px;font-weight:500;margin-bottom:10px;}
+.flag-open{background:#dcfce7;color:var(--green);}
+.flag-upcoming{background:var(--amber-bg);color:var(--amber);}
+.flag-passed{background:var(--red-bg);color:var(--red);}
+.usco-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.6);border:1px solid rgba(0,0,0,.08);border-radius:5px;padding:4px 10px;font-size:11px;font-family:'DM Mono',monospace;margin-bottom:10px;}
+
+/* PROCESSING (PREMIUM ANIMATED DESIGN - MATCHING IMAGE 1) */
+.animated-processing-wrap{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100vw;
+  height:100vh;
+  background:#1a1d23;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+  overflow:hidden;
+  /* 🔴 FIX: Prevent any positioning jump */
+  transition:none !important;
+}
+
+.process-header{
+  position:absolute;
+  top:60px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  align-items:center;
+  gap:12px;
+  transition:none !important;
+}
+
+.logo-icon{
+  width:40px;
+  height:40px;
+  background:#4ade80;
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+  color:#1a1d23;
+  font-size:22px;
+  font-family:'Cormorant Garamond',serif;
+  box-shadow:0 0 25px rgba(74,222,128,0.7), 0 0 10px rgba(74,222,128,0.9);
+}
+
+.logo-text{
+  font-size:26px;
+  color:#ffffff;
+  font-weight:700;
+  font-family:'Cormorant Garamond',serif;
+  opacity:1;
+  text-shadow:0 0 30px rgba(255,255,255,0.8), 0 0 10px rgba(255,255,255,1);
+  letter-spacing:0.5px;
+}
+
+.process-timeline{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:24px;
+  padding:40px;
+  position:relative;
+  width:100%;
+  max-width:1400px;
+  margin:0 auto;
+  /* 🔴 FIX: No transitions or animations on layout */
+  transition:none !important;
+  will-change:auto;
+}
+
+.process-step{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:18px;
+  opacity:0.25;
+  transition:opacity 0.6s ease;
+  /* 🔴 FIX: Prevent layout shift during opacity change */
+  transform:translateZ(0);
+  will-change:opacity;
+  backface-visibility:hidden;
+}
+
+.process-step.active{
+  opacity:1;
+}
+
+.step-number{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  border:2.5px solid #4ade80;
+  background:rgba(74,222,128,0.12);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#4ade80;
+  font-weight:700;
+  font-size:18px;
+}
+
+.step-title{
+  text-align:center;
+  color:#e5e7eb;
+  font-size:14px;
+  line-height:1.5;
+  max-width:200px;
+  font-weight:400;
+}
+
+.step-card{
+  width:220px;
+  height:180px;
+  background:#252930;
+  border:2px solid #374151;
+  border-radius:14px;
+  padding:24px;
+  position:relative;
+  overflow:hidden;
+  transition:all 0.6s ease;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  /* 🔴 FIX: Prevent layout shift */
+  transform:translateZ(0);
+  backface-visibility:hidden;
+}
+
+.process-step.active .step-card{
+  border-color:#4ade80;
+  background:#2a2f38;
+  box-shadow:0 0 40px rgba(74,222,128,0.4), inset 0 0 30px rgba(74,222,128,0.08);
+  animation:glowPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes glowPulse{
+  0%, 100%{
+    box-shadow:0 0 40px rgba(74,222,128,0.4), inset 0 0 30px rgba(74,222,128,0.08);
+  }
+  50%{
+    box-shadow:0 0 60px rgba(74,222,128,0.6), inset 0 0 40px rgba(74,222,128,0.15);
+  }
+}
+
+/* PREMIUM CARD GRAPHICS - MATCHING IMAGE 1 */
+.card-graphic{
+  width:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+}
+
+/* Step 1: Checkmark + Document Grid */
+.check-graphic{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:16px;
+  width:100%;
+}
+
+.check-icon-lg{
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  background:rgba(74,222,128,0.15);
+  border:3px solid #4ade80;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+
+.check-icon-lg::after{
+  content:'✓';
+  font-size:32px;
+  color:#4ade80;
+  font-weight:bold;
+}
+
+.doc-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  width:100%;
+}
+
+.doc-mini{
+  background:#1e2329;
+  border:1.5px solid #374151;
+  border-radius:8px;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.doc-mini-line{
+  height:3px;
+  background:#374151;
+  border-radius:2px;
+}
+
+.doc-mini-line:first-child{width:80%;}
+.doc-mini-line:last-child{width:60%;}
+
+.doc-mini-icon{
+  font-size:18px;
+  opacity:0.6;
+}
+
+/* Step 2: Calendar Comparison */
+.calendar-graphic{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  width:100%;
+  align-items:center;
+}
+
+.calendar-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  justify-content:center;
+}
+
+.calendar-mini{
+  width:68px;
+  height:68px;
+  background:#1e2329;
+  border:2px solid #374151;
+  border-radius:8px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.calendar-header{
+  background:linear-gradient(135deg, #4ade80, #22c55e);
+  height:18px;
+  width:100%;
+}
+
+.calendar-body{
+  flex:1;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:3px;
+  padding:6px;
+}
+
+.calendar-day{
+  width:100%;
+  height:100%;
+  background:#374151;
+  border-radius:2px;
+}
+
+.formula-text{
+  font-size:13px;
+  color:#9ca3af;
+  font-family:'DM Mono',monospace;
+  font-weight:500;
+}
+
+/* Step 3: Multiple Calendars */
+.calendars-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+  width:100%;
+}
+
+.calendar-item{
+  width:85px;
+  height:70px;
+  background:#1e2329;
+  border:2px solid #374151;
+  border-radius:8px;
+  display:flex;
+  flex-direction:column;
+}
+
+.calendar-item .calendar-header{
+  height:16px;
+}
+
+.calendar-item .calendar-body{
+  padding:5px;
+  gap:2px;
+}
+
+.calendar-item.active{
+  border-color:#4ade80;
+}
+
+.calendar-item.active .calendar-day:nth-child(5){
+  background:#4ade80;
+}
+
+/* Step 4: Data Sources with Icon */
+.data-sources{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+  width:100%;
+}
+
+.music-icon{
+  font-size:42px;
+  filter:grayscale(1) brightness(0.7);
+}
+
+.source-labels{
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+  width:100%;
+}
+
+.source-label{
+  padding:9px 16px;
+  background:rgba(74,222,128,0.12);
+  border:1.5px solid rgba(74,222,128,0.35);
+  border-radius:8px;
+  color:#4ade80;
+  font-size:12px;
+  font-weight:700;
+  text-align:center;
+  letter-spacing:0.8px;
+  font-family:'DM Mono',monospace;
+}
+
+/* Step 5: Document Icon */
+.document-graphic{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+  width:100%;
+}
+
+.doc-icon{
+  width:70px;
+  height:85px;
+  background:#1e2329;
+  border:2.5px solid #374151;
+  border-radius:10px;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  padding:12px 10px;
+  gap:5px;
+}
+
+.doc-icon::before{
+  content:'';
+  position:absolute;
+  top:-2px;
+  right:-2px;
+  width:24px;
+  height:24px;
+  background:#374151;
+  clip-path:polygon(100% 0, 100% 100%, 0 0);
+}
+
+.doc-line{
+  height:3px;
+  background:#374151;
+  border-radius:2px;
+}
+
+.doc-line:nth-child(1){width:90%;}
+.doc-line:nth-child(2){width:80%;}
+.doc-line:nth-child(3){width:85%;}
+.doc-line:nth-child(4){width:75%;}
+
+/* Connectors */
+.connector{
+  width:36px;
+  height:3px;
+  background:#374151;
+  position:relative;
+  opacity:0.25;
+  transition:all 0.6s ease;
+}
+
+.connector.active{
+  background:#4ade80;
+  opacity:1;
+  box-shadow:0 0 12px rgba(74,222,128,0.7);
+}
+
+.connector.active::after{
+  content:'›';
+  position:absolute;
+  right:-10px;
+  top:50%;
+  transform:translateY(-50%);
+  color:#4ade80;
+  font-size:24px;
+  font-weight:bold;
+  line-height:1;
+  animation:arrowMove 1s ease-in-out infinite;
+}
+
+@keyframes arrowMove{
+  0%, 100%{
+    transform:translateY(-50%) translateX(0);
+    opacity:1;
+  }
+  50%{
+    transform:translateY(-50%) translateX(5px);
+    opacity:0.7;
+  }
+}
+
+/* Responsive */
+@media(max-width:1300px){
+  .process-timeline{
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:20px;
+  }
+  .step-card{
+    width:180px;
+    height:150px;
+    padding:18px;
+  }
+  .connector{
+    display:none;
+  }
+}
+
+/* MONETIZATION */
+.mon-opt{display:flex;align-items:flex-start;gap:12px;padding:13px 15px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:9px;cursor:pointer;transition:all .2s;}
+.mon-opt:hover{border-color:var(--gold-dark);background:#fdfcf9;}
+.mon-opt.selected{border-color:var(--dark);background:#f9f8f5;}
+.mon-opt input{margin-top:3px;flex-shrink:0;accent-color:var(--dark);}
+.mon-opt-text strong{display:block;font-size:14px;margin-bottom:2px;}
+.mon-opt-text span{font-size:12px;color:var(--muted);}
+
+/* FINAL */
+.final-opt{padding:13px 17px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:9px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;}
+.final-opt:hover{border-color:var(--dark);background:#f9f8f5;transform:translateX(2px);}
+.final-opt.selected{border-color:var(--dark);background:#f9f8f5;}
+.final-opt input{accent-color:var(--dark);}
+.icon-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;}
+
+/* SUCCESS */
+.success-icon{width:60px;height:60px;border-radius:50%;background:var(--green-bg);border:2px solid #86efac;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:26px;animation:popIn .4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes popIn{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
+.disclaimer{font-size:11px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:18px;margin-top:22px;}
+
+/* TERMS OF USE MODAL */
+.terms-modal-overlay{
+  display:none;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100vw;
+  height:100vh;
+  background:rgba(0,0,0,0.7);
+  z-index:10000;
+  animation:fadeIn 0.2s ease;
+}
+.terms-modal-overlay.show{display:flex;align-items:center;justify-content:center;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.terms-modal{
+  background:#fff;
+  border-radius:12px;
+  max-width:700px;
+  width:90%;
+  max-height:80vh;
+  display:flex;
+  flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,0.3);
+  animation:slideUp 0.3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.terms-modal-header{
+  padding:24px 32px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.terms-modal-header h3{
+  font-family:'Cormorant Garamond',serif;
+  font-size:24px;
+  font-weight:600;
+  color:var(--dark);
+  margin:0;
+}
+.terms-close-btn{
+  background:none;
+  border:none;
+  font-size:28px;
+  color:var(--muted);
+  cursor:pointer;
+  padding:0;
+  width:32px;
+  height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:6px;
+  transition:all 0.2s;
+}
+.terms-close-btn:hover{
+  background:#f5f5f5;
+  color:var(--dark);
+}
+.terms-modal-body{
+  padding:32px;
+  overflow-y:auto;
+  flex:1;
+}
+.terms-modal-body h4{
+  font-size:16px;
+  font-weight:600;
+  margin:20px 0 12px;
+  color:var(--dark);
+}
+.terms-modal-body h4:first-child{margin-top:0;}
+.terms-modal-body p{
+  font-size:14px;
+  line-height:1.7;
+  color:var(--ink);
+  margin-bottom:14px;
+}
+.terms-modal-body ul{
+  margin:14px 0 14px 24px;
+  font-size:14px;
+  line-height:1.7;
+  color:var(--ink);
+}
+.terms-modal-body ul li{
+  margin-bottom:10px;
+}
+.terms-modal-footer{
+  padding:20px 32px;
+  border-top:1px solid var(--border);
+  display:flex;
+  gap:12px;
+  justify-content:flex-end;
+}
+.btn-accept-terms{
+  background:var(--dark);
+  color:var(--parchment);
+  padding:10px 24px;
+  border-radius:8px;
+  border:none;
+  font-size:14px;
+  font-weight:500;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.btn-accept-terms:hover{
+  background:#2c2c28;
+  transform:translateY(-1px);
+}
+
+/* FOOTER */
+.footer{background:var(--dark);}
+.footer-top{max-width:1100px;margin:0 auto;padding:36px 40px 28px;display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:48px;border-bottom:1px solid #252523;}
+@media(max-width:700px){.footer-top{grid-template-columns:1fr;gap:24px;padding:28px 24px;}}
+.footer-logo-wrap{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.footer-logo{width:28px;height:28px;border-radius:6px;background:var(--parchment);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:700;color:var(--dark);}
+.footer-brand-name{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--parchment);}
+.footer-desc{font-size:12px;color:#555550;line-height:1.65;max-width:240px;}
+.footer-col-title{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#555550;margin-bottom:12px;}
+.footer-links{display:flex;flex-direction:column;gap:9px;}
+.footer-links a{font-size:13px;color:#888882;text-decoration:none;transition:color .15s;}
+.footer-links a:hover{color:var(--gold);}
+.footer-bottom{max-width:1100px;margin:0 auto;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+@media(max-width:700px){.footer-bottom{padding:14px 24px;}}
+.footer-copy{font-size:11px;color:#3a3a36;}
+.footer-powered{font-family:'DM Mono',monospace;font-size:10px;color:#3a3a36;letter-spacing:.1em;}
+.footer-powered span{color:#555550;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-logo">R</div>
+    <div class="hdr-title">Rights Back<sup style="font-size:60%;margin-left:1px;top:-0.4em;">®</sup></div>
+    <div class="hdr-divider"></div>
+    <div class="hdr-tagline">Copyright Reversion Tool</div>
+  </div>
+  <div class="step-indicator" id="stepDots"></div>
+</div>
+
+<div class="main">
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+
+<!-- STEP 1: WELCOME -->
+  <div class="step active" id="step1">
+    <div class="section-label">Welcome</div>
+    <h1 class="page-title">Find Out if Your Music Qualifies for Reversion Under the Copyright Act</h1>
+    <p class="page-desc">U.S. copyright law gives songwriters the right to reclaim rights they signed away — but the windows are narrow, technical, and time-sensitive. This free tool helps you understand where you stand in minutes.</p>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px;font-family:'DM Mono',monospace;letter-spacing:0.05em;">Rights Back<sup style="font-size:65%;top:-0.5em;">®</sup> &nbsp;·&nbsp; Patent Pending</p>
+    <div class="card">
+      <p style="font-size:13px;font-weight:500;margin-bottom:14px;">What this tool does:</p>
+      <div class="check-bullet"><div class="check-circle">✓</div><span style="font-size:14px;">Determines if and when your song is eligible to be reclaimed</span></div>
+      <div class="check-bullet"><div class="check-circle">✓</div><span style="font-size:14px;">Auto-fills key dates using your USCO registration number or ISWC — no manual lookup needed</span></div>
+      <div class="check-bullet"><div class="check-circle">✓</div><span style="font-size:14px;">Calculates your exact termination window, notice window, and recordation deadline</span></div>
+      <div class="check-bullet"><div class="check-circle">✓</div><span style="font-size:14px;">Alerts you to monetization options if your termination window has already closed</span></div>
+      <div class="check-bullet" style="margin-bottom:20px;"><div class="check-circle">✓</div><span style="font-size:14px;">Offers you the opportunity to connect with professionals who can assist in filing the documents necessary to reclaim your rights</span></div>
+      <div class="notice notice-amber"><strong>Advisory only.</strong> This tool is not a legal filing service and does not constitute legal advice.</div>
+      <p style="font-size:12px;color:var(--muted);">We collect your contact and song information to provide results and, with your consent, to follow up about professional assistance or monetization opportunities.</p>
+    </div>
+    <div class="btn-row" style="justify-content:flex-start;"><button class="btn btn-primary" onclick="goTo(2)">Get started →</button></div>
+  </div>
+
+  <!-- STEP 2: ACCOUNT -->
+  <div class="step" id="step2">
+    <div class="section-label">Step 1 of 4 — Your Information</div>
+    <h2 class="page-title">Your contact details</h2>
+    <p class="page-desc">Fields marked <span style="color:var(--red);">*</span> are required.</p>
+    <div class="card">
+      <div class="card-section">
+        <div class="cs-label">Personal information</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Full legal name <span class="req">*</span></label>
+            <input type="text" id="userName" placeholder="As it appears on contracts" oninput="validateName()" onblur="validateName()"/>
+            <div class="fhint" id="nameHint"></div>
+          </div>
+          <div class="field">
+            <label>Stage / artist name <span class="opt">optional</span></label>
+            <input type="text" id="userStageName" placeholder="If different from legal name"/>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Email address <span class="req">*</span></label>
+            <input type="email" id="userEmail" placeholder="your@email.com" oninput="validateEmail()" onblur="validateEmail()"/>
+            <div class="fhint" id="emailHint"></div>
+          </div>
+          <div class="field">
+            <label>Confirm email address <span class="req">*</span></label>
+            <input type="email" id="userEmailConfirm" placeholder="Re-enter your email" oninput="validateEmailConfirm()" onblur="validateEmailConfirm()"/>
+            <div class="fhint" id="emailConfirmHint"></div>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Phone number <span class="opt">optional</span></label>
+            <input type="tel" id="userPhone" placeholder="+1 555 000 0000" oninput="validatePhone()" onblur="validatePhone()"/>
+            <div class="fhint" id="phoneHint"></div>
+          </div>
+          <div class="field">
+            <label>Preferred contact method <span class="opt">optional</span></label>
+            <select id="userContact">
+              <option value="">Select one</option>
+              <option value="email">Email</option>
+              <option value="phone">Phone</option>
+              <option value="either">Either</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="card-section">
+        <div class="cs-label">Location & PRO membership</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Country <span class="req">*</span></label>
+            <select id="userCountry" onchange="onCountryChange()">
+              <option value="">Select your country</option>
+              <option value="US">United States</option>
+              <option value="UK">United Kingdom</option>
+              <option value="CA">Canada</option>
+              <option value="AU">Australia</option>
+              <option value="other">Other</option>
+            </select>
+            <div class="fhint fhint-info" id="countryHint" style="display:none;">⚠ §203 and §304 apply to U.S. grants only. Results may not apply to non-U.S. grants.</div>
+          </div>
+          <div class="field">
+            <label>PRO membership <span class="opt">optional</span></label>
+            <select id="userPro">
+              <option value="">Select one</option>
+              <option value="ASCAP">ASCAP</option>
+              <option value="BMI">BMI</option>
+              <option value="SESAC">SESAC</option>
+              <option value="GMR">GMR</option>
+              <option value="none">Not a member</option>
+              <option value="unsure">Unsure</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>IPI Number <span class="opt">optional</span></label>
+            <input type="text" id="userIPI" placeholder="e.g., 123456789" oninput="validateIPI()" onblur="validateIPI()"/>
+            <div class="fhint fhint-info">Your unique Interested Parties Information number (if you have one)</div>
+            <div class="fhint" id="ipiHint"></div>
+          </div>
+          <div class="field">
+            <label>PRO ID / CAE Number <span class="opt">optional</span></label>
+            <input type="text" id="userProID" placeholder="e.g., ASCAP or BMI ID"/>
+            <div class="fhint fhint-info">Your ASCAP, BMI, or other PRO member ID</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-section">
+        <div class="cs-label">Consent</div>
+        <div class="checkbox-wrap">
+          <input type="checkbox" id="termsCheck" disabled/>
+          <label for="termsCheck">I have read and agree to the <a href="#" onclick="showTermsModal();return false;" style="color:var(--blue);text-decoration:underline;">Terms of Use</a>. <span class="req">*</span> <span class="opt" id="termsReadHint" style="color:var(--amber);font-size:12px;">Click to read first</span></label>
+        </div>
+        <div class="checkbox-wrap">
+          <input type="checkbox" id="consentCheck"/>
+          <label for="consentCheck">I agree to be contacted about my submission and related rights opportunities. I understand this tool is advisory only and does not create an attorney-client relationship. <span class="req">*</span></label>
+        </div>
+        <div class="checkbox-wrap">
+          <input type="checkbox" id="marketingCheck"/>
+          <label for="marketingCheck">I'd like to receive updates about copyright termination news and opportunities. <span class="opt">optional</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo(1)">← Back</button>
+      <button class="btn btn-primary" onclick="validateAccount()">Continue →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: SONGS -->
+  <div class="step" id="step3">
+    <div class="section-label">Step 2 of 4 — Song Details</div>
+    <h2 class="page-title">Tell us about your songs</h2>
+    <p class="page-desc">Enter up to five songs. Enter a USCO or ISWC number and click <strong>Look up</strong> — our AI will auto-fill the dates for you. Fields marked <span style="color:var(--red);">*</span> are required.</p>
+    
+    <div id="error-display"></div>
+    
+    <div id="songsContainer"></div>
+    <button class="btn-add-song" id="addSongBtn" onclick="addSong()"><span style="font-size:18px;line-height:1;">+</span> Add another song</button>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo(2)">← Back</button>
+      <button class="btn btn-primary" onclick="validateSongs()">Analyze my songs →</button>
+    </div>
+  </div>
+
+</div> <!-- END .main -->
+
+<!-- STEP 4: PROCESSING (OUTSIDE MAIN) -->
+<div class="step" id="step4">
+  <div class="animated-processing-wrap">
+    <div class="process-header">
+      <span class="logo-icon">R</span>
+      <span class="logo-text">Rights Back</span>
+    </div>
+    
+    <div class="process-timeline">
+      <!-- Step 1: Checking with Premium Graphics -->
+      <div class="process-step" id="anim-step1">
+        <div class="step-number">1</div>
+        <div class="step-title">Checking grant dates<br>and regime eligibility</div>
+        <div class="step-card">
+          <div class="card-graphic">
+            <div class="check-graphic">
+              <div class="check-icon-lg"></div>
+              <div class="doc-grid">
+                <div class="doc-mini">
+                  <span class="doc-mini-icon">✓</span>
+                  <div class="doc-mini-line"></div>
+                  <div class="doc-mini-line"></div>
+                </div>
+                <div class="doc-mini">
+                  <div class="doc-mini-line"></div>
+                  <div class="doc-mini-line"></div>
+                  <span class="doc-mini-icon">📄</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="connector" id="conn1"></div>
+      
+      <!-- Step 2: Computing with Calendars -->
+      <div class="process-step" id="anim-step2">
+        <div class="step-number">2</div>
+        <div class="step-title">Computing termination<br>windows (§203 / §304)</div>
+        <div class="step-card">
+          <div class="card-graphic">
+            <div class="calendar-graphic">
+              <div class="calendar-row">
+                <div class="calendar-mini">
+                  <div class="calendar-header"></div>
+                  <div class="calendar-body">
+                    <div class="calendar-day"></div>
+                    <div class="calendar-day"></div>
+                    <div class="calendar-day"></div>
+                    <div class="calendar-day"></div>
+                    <div class="calendar-day"></div>
+                    <div class="calendar-day"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="formula-text">§203 = §304</div>
+              <div class="calendar-row">
+                <div class="calendar-mini">
+                  <div class="calendar-header"></div>
+                  <div class="calendar-body">
+                    <div class="calendar-day"></div>
+                    <div class="calendar-day"></div>
+                    <div class="calendar-day"></div>
+                    <div class="calendar-day"></div>
+                    <div class="calendar-day"></div>
+                    <div class="calendar-day"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="connector" id="conn2"></div>
+      
+      <!-- Step 3: Calculating with Calendar Grid -->
+      <div class="process-step" id="anim-step3">
+        <div class="step-number">3</div>
+        <div class="step-title">Calculating notice and<br>recordation deadlines</div>
+        <div class="step-card">
+          <div class="card-graphic">
+            <div class="calendars-grid">
+              <div class="calendar-item">
+                <div class="calendar-header"></div>
+                <div class="calendar-body">
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                </div>
+              </div>
+              <div class="calendar-item">
+                <div class="calendar-header"></div>
+                <div class="calendar-body">
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                </div>
+              </div>
+              <div class="calendar-item">
+                <div class="calendar-header"></div>
+                <div class="calendar-body">
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                </div>
+              </div>
+              <div class="calendar-item active">
+                <div class="calendar-header"></div>
+                <div class="calendar-body">
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                  <div class="calendar-day"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="connector" id="conn3"></div>
+      
+      <!-- Step 4: Cross-referencing Data Sources -->
+      <div class="process-step" id="anim-step4">
+        <div class="step-number">4</div>
+        <div class="step-title">Cross-referencing<br>USCO and PRO data</div>
+        <div class="step-card">
+          <div class="card-graphic">
+            <div class="data-sources">
+              <div class="music-icon">🎵</div>
+              <div class="source-labels">
+                <div class="source-label">USCO</div>
+                <div class="source-label">MUSIC</div>
+                <div class="source-label">PRO</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="connector" id="conn4"></div>
+      
+      <!-- Step 5: Generating Document -->
+      <div class="process-step" id="anim-step5">
+        <div class="step-number">5</div>
+        <div class="step-title">Generating<br>your results</div>
+        <div class="step-card">
+          <div class="card-graphic">
+            <div class="document-graphic">
+              <div class="doc-icon">
+                <div class="doc-line"></div>
+                <div class="doc-line"></div>
+                <div class="doc-line"></div>
+                <div class="doc-line"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- STEP 5: RESULTS -->
+  <div class="step" id="step5">
+    <div class="section-label">Step 3 of 4 — Results</div>
+    <h2 class="page-title">Your termination analysis</h2>
+    <p class="page-desc">These results are informational only and not legal advice. Termination eligibility depends on many specific factors.</p>
+    <div id="resultsContainer"></div>
+    <div class="notice notice-amber">These results are estimates only. Termination under §203 and §304 is highly technical — errors in dates or parties can affect validity. For co-written songs, termination rights are held jointly and require majority consent; this analysis assumes you are the sole writer or will coordinate with co-writers separately.</div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo(3)">← Edit songs</button>
+      <button class="btn btn-primary" id="resultsNextBtn" onclick="nextAfterResults()">Continue →</button>
+    </div>
+  </div>
+
+  <!-- STEP 6: MONETIZATION -->
+  <div class="step" id="step6">
+    <div class="section-label">Step 3b of 4 — Monetization</div>
+    <h2 class="page-title">You may still have options</h2>
+    <p class="page-desc">Even if the statutory termination window has passed, you may have opportunities to monetize your song royalties or explore a sale or licensing transaction.</p>
+    <div class="card">
+      <div class="card-section">
+        <div class="cs-label">I am interested in</div>
+        <div class="mon-opt" id="monOpt1" onclick="toggleMon('monOpt1','mon_sale')">
+          <input type="checkbox" id="mon_sale"/>
+          <div class="mon-opt-text"><strong>Exploring a sale of my rights</strong><span>Transfer ownership of your copyright or termination interest to a qualified buyer</span></div>
+        </div>
+        <div class="mon-opt" id="monOpt2" onclick="toggleMon('monOpt2','mon_license')">
+          <input type="checkbox" id="mon_license"/>
+          <div class="mon-opt-text"><strong>Licensing or royalty monetization</strong><span>License your rights to generate ongoing royalty income without a full sale</span></div>
+        </div>
+        <div class="mon-opt" id="monOpt3" onclick="toggleMon('monOpt3','mon_catalog')">
+          <input type="checkbox" id="mon_catalog"/>
+          <div class="mon-opt-text"><strong>Full catalog review</strong><span>Have our team review your entire catalog for termination and monetization opportunities</span></div>
+        </div>
+      </div>
+      <div class="card-section">
+        <div class="cs-label">Additional details</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Approximate annual royalties <span class="opt">helps us prioritize</span></label>
+            <select id="monRoyalties">
+              <option value="">Prefer not to say</option>
+              <option value="under_1k">Under $1,000 / year</option>
+              <option value="1k_10k">$1,000 – $10,000 / year</option>
+              <option value="10k_50k">$10,000 – $50,000 / year</option>
+              <option value="50k_plus">$50,000+ / year</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Best email for follow-up <span class="opt">if different from above</span></label>
+            <input type="email" id="monEmail" placeholder=""/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Additional comments <span class="opt">optional</span></label>
+          <textarea id="monNotes" placeholder="Any other context that might be helpful…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo(5)">← Back</button>
+      <button class="btn btn-primary" onclick="lastStepBeforeFinal=6;goTo(7)">Continue →</button>
+    </div>
+  </div>
+
+  <!-- STEP 7: NEXT STEPS (FOR ELIGIBLE SONGS) -->
+  <div class="step" id="step7">
+    <div class="section-label">Step 4 of 4 — Next Steps</div>
+    <h2 class="page-title">Next Steps</h2>
+    <p class="page-desc">Based on your analysis, you have potential termination rights. Here's how we can help you move forward.</p>
+    
+    <div class="card">
+      <div class="cs-label" style="margin-bottom:14px;">What would you like to do next? <span class="req">*</span></div>
+      
+      <!-- OPTION 1: Reclamation Assistance -->
+      <div class="final-opt" id="fo1" onclick="selectFinal('reclamation','fo1')">
+        <input type="radio" name="finalChoice" value="reclamation"/>
+        <div class="icon-circle" style="background:var(--green-bg);">⚖</div>
+        <div>
+          <strong style="font-size:14px;">Connect with a professional who can assist in filing the documents necessary to reclaim your rights</strong>
+          <p style="font-size:12px;color:var(--muted);">Get expert assistance with termination notices, recordation, and the full rights reclamation process</p>
+        </div>
+      </div>
+      
+      <!-- OPTION 2: Monetization Advisory -->
+      <div class="final-opt" id="fo2" onclick="selectFinal('monetization','fo2')" style="background:var(--royalty-bg);border-color:var(--royalty-border);">
+        <input type="radio" name="finalChoice" value="monetization"/>
+        <div class="icon-circle" style="background:var(--royalty-icon-bg);color:var(--royalty-title);">$</div>
+        <div style="flex:1;">
+          <strong style="font-size:14px;color:var(--royalty-title);">Connect with a professional who can advise you on monetization options</strong>
+          <p style="font-size:12px;color:var(--muted);">Explore royalty sales, licensing, catalog financing, and other ways to monetize your rights</p>
+          
+          <div id="monetizationFollowupBox" style="display:none;margin-top:16px;padding:18px;border-radius:12px;background:var(--royalty-inner-bg);border:1px solid var(--royalty-border);box-shadow:0 10px 24px rgba(0,0,0,.06);">
+            <div class="cs-label" style="margin-bottom:10px;color:var(--royalty-title);">Monetization interest details</div>
+            <p style="font-size:13px;line-height:1.7;color:var(--royalty-title);margin:0 0 14px;">
+              Share details about your monetization interests — royalty sales, licensing opportunities, catalog financing, expected royalties, or any questions you have.
+            </p>
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:7px;color:var(--royalty-title);">Additional details <span class="opt">optional</span></label>
+            <textarea id="finalMonetizationThoughts" style="width:100%;min-height:118px;border-radius:10px;border:1px solid var(--royalty-border);background:#fff;padding:13px 14px;font-size:13px;line-height:1.6;resize:vertical;outline:none;" placeholder="Example: I'm interested in discussing a potential royalty sale for my catalog, including valuation and licensing opportunities. Please advise on next steps."></textarea>
+          </div>
+        </div>
+      </div>
+      
+      <!-- OPTION 3: Just Email Results -->
+      <div class="final-opt" id="fo3" onclick="selectFinal('email_only','fo3')">
+        <input type="radio" name="finalChoice" value="email_only"/>
+        <div class="icon-circle" style="background:var(--blue-bg);">✉</div>
+        <div>
+          <strong style="font-size:14px;">Email me my results only</strong>
+          <p style="font-size:12px;color:var(--muted);">Receive a full summary of your termination analysis by email — no follow-up from our team</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo(5)">← Back to results</button>
+      <button class="btn btn-gold" id="submitBtn" onclick="submitForm()">Submit →</button>
+    </div>
+  </div>
+
+  <!-- STEP 8: CONFIRMATION -->
+  <div class="step" id="step8">
+    <div style="text-align:center;padding:40px 0;">
+      <div class="success-icon">✓</div>
+      <h2 class="page-title" style="text-align:center;">Submission received</h2>
+      <p class="page-desc" style="text-align:center;max-width:460px;margin:0 auto 24px;">Thank you. We've received your information and will be in touch. A results summary will be sent to <strong id="confirmEmail"></strong>.</p>
+      <div class="card" style="text-align:left;max-width:460px;margin:0 auto 20px;">
+        <div class="cs-label">What happens next</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;gap:12px;align-items:flex-start;"><div style="width:22px;height:22px;border-radius:50%;background:var(--dark);color:var(--parchment);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;margin-top:2px;">1</div><span style="font-size:13px;">You'll receive a results summary by email within 24 hours</span></div>
+          <div style="display:flex;gap:12px;align-items:flex-start;"><div style="width:22px;height:22px;border-radius:50%;background:var(--dark);color:var(--parchment);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;margin-top:2px;">2</div><span style="font-size:13px;">Our team will review your submission and may reach out with questions</span></div>
+          <div style="display:flex;gap:12px;align-items:flex-start;"><div style="width:22px;height:22px;border-radius:50%;background:var(--dark);color:var(--parchment);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;margin-top:2px;">3</div><span style="font-size:13px;">If you requested a professional referral or monetization discussion, we'll be in touch shortly</span></div>
+        </div>
+      </div>
+      <div class="disclaimer">This tool is provided for informational and educational purposes only and does not constitute legal advice. Results are estimates only. Copyright termination rights are complex and time-sensitive. © 2025 Rights Back Calculator. All rights reserved.</div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-top">
+    <div>
+      <div class="footer-logo-wrap">
+        <div class="footer-logo">R</div>
+        <div class="footer-brand-name">Rights Back<sup style="font-size:60%;top:-0.4em;">®</sup></div>
+      </div>
+      <div class="footer-desc">Music rights intelligence and investment. Specialists in copyright termination under 17 U.S.C. §§203, 304(c), and 304(d).</div>
+    </div>
+    <div>
+      <div class="footer-col-title">Tool</div>
+      <div class="footer-links">
+        <a href="/">Rights Back</a>
+        <a href="#" onclick="goTo(1);return false;">Start Analysis</a>
+        <a href="mailto:info@rightsback.com">Contact Us</a>
+      </div>
+    </div>
+    <div>
+      <div class="footer-col-title">Legal</div>
+      <div class="footer-links">
+        <a href="/privacy-policy.html">Privacy Policy</a>
+        <a href="/terms-of-use.html">Terms of Use</a>
+        <a href="#">Disclaimer</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2025 Rights Back Calculator. All rights reserved. For informational purposes only — not legal advice.</div>
+    <div class="footer-powered">POWERED BY <span>COPYRIGHT LAW AI</span></div>
+  </div>
+</footer>
+
+<!-- TERMS OF USE MODAL -->
+<div class="terms-modal-overlay" id="termsModal" onclick="if(event.target===this)closeTermsModal();">
+  <div class="terms-modal">
+    <div class="terms-modal-header">
+      <h3>Terms of Use</h3>
+      <button class="terms-close-btn" onclick="closeTermsModal()">×</button>
+    </div>
+    <div class="terms-modal-body" id="termsModalBody" onscroll="checkTermsScroll()">
+      <p><strong>Please read this Terms of Use of the Rights Back web application (the "Agreement") carefully.</strong> The Terms of Use contain the legally binding terms and conditions that you will be subject to. By accessing the Rights Back Copyright Termination Tool you agree:</p>
+      
+      <ul>
+        <li>We will provide you with an analysis of whether and when you are eligible to recapture your US music publishing rights (the "Analysis"). The reversion analysis will be based on the information you provide us and is for your personal use. You are advised that the reversion of rights depends on many factors and that the date provided by our reversion calculator is not a guarantee that you are eligible to recapture your rights.</li>
+        
+        <li>The Reversion Calculator is a starting point in the process of getting your music rights back. The Rights Back website is not intended to provide legal, tax, or financial advice. You should not and agree not to rely solely on the information provided here. You agree that we are not liable for any decisions or actions you take based on the information, calculations or analysis on the Rights Back website.</li>
+        
+        <li>You acknowledge and agree that by providing your information and login you are authorizing us to respond by email or phone with follow up assistance.</li>
+        
+        <li>You acknowledge and agree that we are not acting as a fiduciary in any way.</li>
+        
+        <li>In exchange for your use of the Rights Back Reversion Calculator, you hereby grant to us the right to send by email information relevant to your music rights. You may unsubscribe from the email service at any time. The reversion information is provided without warranty of any kind, express or implied. You agree we will not be responsible or liable for any loss or damages you incur as a result of information posted on the Rights Back web site.</li>
+        
+        <li>We do not represent and/or warrant that the information on the Rights Back web site will meet your requirements or expectations.</li>
+        
+        <li>We make no guarantees or representations regarding the certainty of recapturing your rights or of the value of those rights if recaptured.</li>
+      </ul>
+      
+      <p style="margin-top:20px;font-size:12px;color:var(--muted);"><strong>Last updated:</strong> May 15, 2026</p>
+      
+      <div id="scrollToBottomNotice" style="margin-top:20px;padding:14px;background:var(--amber-bg);border:1px solid var(--royalty-border);border-radius:8px;text-align:center;font-size:13px;color:var(--amber);">
+        ⬇️ Please scroll to the bottom to continue
+      </div>
+    </div>
+    <div class="terms-modal-footer">
+      <button class="btn-accept-terms" id="acceptTermsBtn" onclick="acceptTerms()" disabled style="opacity:0.5;cursor:not-allowed;">I Accept (scroll to bottom first)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOTAL_STEPS = 7;
+let currentStep = 1;
+let songs = [];
+let computedResults = [];
+let selectedFinalChoice = '';
+let lastStepBeforeFinal = 5;
+
+const DISPOSABLE = ['mailinator.com','guerrillamail.com','tempmail.com','throwaway.email','yopmail.com','sharklasers.com','grr.la','guerrillamail.info','spam4.me','10minutemail.com','trashmail.com','dispostable.com','maildrop.cc','mailnull.com','spamgourmet.com','fakeinbox.com','discard.email','spamfree24.org','mytempemail.com','tempinbox.com','getairmail.com','filzmail.com','throwam.com','tempr.email','getnada.com','trashmail.at','trashmail.io','mailnesia.com','mintemail.com','burnermail.io','emailondeck.com','inboxalias.com','guerrillamailblock.com','spamherr.com','spamfree.eu','tempail.com'];
+
+function isDisposable(email) {
+  return DISPOSABLE.includes((email.split('@')[1] || '').toLowerCase());
+}
+
+function showErrorMessage(errors) {
+  const errorContainer = document.getElementById('error-display');
+  
+  if (errors.length === 0) {
+    errorContainer.style.display = 'none';
+    return;
+  }
+  
+  errorContainer.innerHTML = `
+    <div class="error-message-box">
+      <div class="error-header">
+        <span class="error-icon">⚠️</span>
+        <h3>Missing Required Information</h3>
+      </div>
+      
+      <div class="error-content">
+        <p class="error-intro">
+          To calculate your termination rights, we need the following information:
+        </p>
+        
+        <ul class="missing-fields-list">
+          ${errors.map(error => `
+            <li><span class="bullet">•</span> ${error}</li>
+          `).join('')}
+        </ul>
+        
+        <p class="error-guidance">
+          Please scroll up and complete these fields, then submit again.
+        </p>
+        
+        <button onclick="scrollToFirstError()" class="fix-errors-btn">
+          ↑ Go to First Missing Field
+        </button>
+      </div>
+    </div>
+  `;
+  
+  errorContainer.style.display = 'block';
+  errorContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function scrollToFirstError() {
+  const firstErrorField = document.querySelector('.field-error');
+  if (firstErrorField) {
+    firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    firstErrorField.focus();
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function highlightField(fieldId) {
+  const field = document.getElementById(fieldId);
+  if (field) {
+    field.classList.add('field-error');
+  }
+}
+
+function clearErrorHighlights() {
+  document.querySelectorAll('.field-error').forEach(el => {
+    el.classList.remove('field-error');
+  });
+}
+
+function validateName() {
+  const v = document.getElementById('userName').value.trim();
+  const h = document.getElementById('nameHint');
+  const i = document.getElementById('userName');
+  if (!v) { i.className=''; h.textContent=''; return false; }
+  if (v.length < 2 || !/[a-zA-Z]/.test(v)) {
+    i.className='v-err'; h.className='fhint fhint-err'; h.textContent='Please enter your full legal name.'; return false;
+  }
+  i.className='v-ok'; h.textContent=''; return true;
+}
+
+function validateEmail() {
+  const v = document.getElementById('userEmail').value.trim();
+  const h = document.getElementById('emailHint');
+  const i = document.getElementById('userEmail');
+  if (!v) { i.className=''; h.textContent=''; return false; }
+  if (!/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(v)) {
+    i.className='v-err'; h.className='fhint fhint-err'; h.textContent='Please enter a valid email address.'; return false;
+  }
+  if (isDisposable(v)) {
+    i.className='v-err'; h.className='fhint fhint-err'; h.textContent='Temporary email addresses are not accepted. Please use your permanent email.'; return false;
+  }
+  if (v.split('@')[0].length < 2) {
+    i.className='v-err'; h.className='fhint fhint-err'; h.textContent='Please enter a valid email address.'; return false;
+  }
+  i.className='v-ok'; h.className='fhint fhint-ok'; h.textContent='✓ Looks good';
+  const c = document.getElementById('userEmailConfirm').value.trim();
+  if (c) validateEmailConfirm();
+  return true;
+}
+
+function validateEmailConfirm() {
+  const v = document.getElementById('userEmail').value.trim();
+  const c = document.getElementById('userEmailConfirm').value.trim();
+  const h = document.getElementById('emailConfirmHint');
+  const i = document.getElementById('userEmailConfirm');
+  if (!c) { i.className=''; h.textContent=''; return false; }
+  if (v !== c) { i.className='v-err'; h.className='fhint fhint-err'; h.textContent='Email addresses do not match.'; return false; }
+  i.className='v-ok'; h.className='fhint fhint-ok'; h.textContent='✓ Emails match'; return true;
+}
+
+function validatePhone() {
+  const v = document.getElementById('userPhone').value.trim();
+  const h = document.getElementById('phoneHint');
+  const i = document.getElementById('userPhone');
+  if (!v) { i.className=''; h.textContent=''; return true; }
+  const c = v.replace(/[\s\-\(\)\+\.]/g, '');
+  if (!/^\d{10,15}$/.test(c)) {
+    i.className='v-err'; h.className='fhint fhint-err'; h.textContent='Please enter a valid phone number (e.g. +1 555 000 0000).'; return false;
+  }
+  i.className='v-ok'; h.className='fhint fhint-ok'; h.textContent='✓ Valid number'; return true;
+}
+
+function validateIPI() {
+  const v = document.getElementById('userIPI').value.trim();
+  const h = document.getElementById('ipiHint');
+  const i = document.getElementById('userIPI');
+  if (!v) { i.className=''; h.textContent=''; return true; }
+  const c = v.replace(/[\s\-]/g, '');
+  if (!/^\d{9,11}$/.test(c)) {
+    i.className='v-err'; h.className='fhint fhint-err'; h.textContent='IPI numbers are typically 9-11 digits (e.g., 123456789).'; return false;
+  }
+  i.className='v-ok'; h.className='fhint fhint-ok'; h.textContent='✓ Valid IPI format'; return true;
+}
+
+function onCountryChange() {
+  const v = document.getElementById('userCountry').value;
+  document.getElementById('countryHint').style.display = (v && v !== 'US') ? 'block' : 'none';
+}
+
+function initDots() {
+  const c = document.getElementById('stepDots'); c.innerHTML = '';
+  for (let i = 1; i <= TOTAL_STEPS; i++) {
+    const d = document.createElement('div');
+    d.className = 'step-dot' + (i < currentStep ? ' done' : i === currentStep ? ' active' : '');
+    c.appendChild(d);
+  }
+}
+function updateProgress() {
+  document.getElementById('progressBar').style.width = ((currentStep-1)/(TOTAL_STEPS-1)*100) + '%';
+  initDots();
+}
+function goTo(n) {
+  document.getElementById('step'+currentStep).classList.remove('active');
+  
+  // 🔴 RESET ANIMATION when leaving Step 4
+  if (currentStep === 4) {
+    resetAnimation();
+  }
+  
+  currentStep = n;
+  document.getElementById('step'+currentStep).classList.add('active');
+  updateProgress();
+  
+  // 🔴 ULTIMATE FIX: Force body background change
+  if (n === 4) {
+    document.body.classList.add('processing-active');
+    setTimeout(() => animateProcessing(), 100);
+  } else {
+    document.body.classList.remove('processing-active');
+  }
+  
+  window.scrollTo({top:0,behavior:'instant'});
+}
+
+function resetAnimation() {
+  // Clear all active classes from animation steps
+  const steps = ['anim-step1', 'anim-step2', 'anim-step3', 'anim-step4', 'anim-step5'];
+  const connectors = ['conn1', 'conn2', 'conn3', 'conn4'];
+  
+  steps.forEach(step => {
+    const el = document.getElementById(step);
+    if (el) el.classList.remove('active');
+  });
+  
+  connectors.forEach(conn => {
+    const el = document.getElementById(conn);
+    if (el) el.classList.remove('active');
+  });
+}
+
+function animateProcessing() {
+  const steps = ['anim-step1', 'anim-step2', 'anim-step3', 'anim-step4', 'anim-step5'];
+  const connectors = ['conn1', 'conn2', 'conn3', 'conn4'];
+  let currentIndex = 0;
+  
+  document.getElementById(steps[0]).classList.add('active');
+  
+  const interval = setInterval(() => {
+    if (currentIndex < connectors.length) {
+      document.getElementById(connectors[currentIndex]).classList.add('active');
+    }
+    
+    currentIndex++;
+    if (currentIndex < steps.length) {
+      document.getElementById(steps[currentIndex]).classList.add('active');
+    } else {
+      clearInterval(interval);
+      setTimeout(() => {
+        computeResults();
+        renderResults();
+        goTo(5);
+      }, 800);
+    }
+  }, 750); // 🔴 Slowed down: 750ms × 5 steps = 3.75s + 800ms = ~4 seconds total
+}
+
+function validateAccount() {
+  if (!validateName()) { document.getElementById('userName').focus(); return; }
+  if (!validateEmail()) { document.getElementById('userEmail').focus(); return; }
+  if (!validateEmailConfirm()) { document.getElementById('userEmailConfirm').focus(); return; }
+  if (!validatePhone()) { document.getElementById('userPhone').focus(); return; }
+  if (!validateIPI()) { document.getElementById('userIPI').focus(); return; }
+  if (!document.getElementById('userCountry').value) { alert('Please select your country.'); return; }
+  if (!document.getElementById('termsCheck').checked) { alert('Please accept the Terms of Use to continue.'); return; }
+  if (!document.getElementById('consentCheck').checked) { alert('Please check the consent box to continue.'); return; }
+  if (songs.length === 0) addSong();
+  goTo(3);
+}
+
+// Terms of Use Modal Functions
+function showTermsModal() {
+  document.getElementById('termsModal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  
+  // Reset scroll position and button state
+  const modalBody = document.getElementById('termsModalBody');
+  modalBody.scrollTop = 0;
+  document.getElementById('acceptTermsBtn').disabled = true;
+  document.getElementById('acceptTermsBtn').style.opacity = '0.5';
+  document.getElementById('acceptTermsBtn').style.cursor = 'not-allowed';
+  document.getElementById('acceptTermsBtn').textContent = 'I Accept (scroll to bottom first)';
+  document.getElementById('scrollToBottomNotice').style.display = 'block';
+}
+
+function closeTermsModal() {
+  document.getElementById('termsModal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function checkTermsScroll() {
+  const modalBody = document.getElementById('termsModalBody');
+  const scrolledToBottom = modalBody.scrollHeight - modalBody.scrollTop <= modalBody.clientHeight + 50;
+  
+  if (scrolledToBottom) {
+    // User reached the bottom - enable accept button
+    const acceptBtn = document.getElementById('acceptTermsBtn');
+    acceptBtn.disabled = false;
+    acceptBtn.style.opacity = '1';
+    acceptBtn.style.cursor = 'pointer';
+    acceptBtn.textContent = 'I Accept';
+    document.getElementById('scrollToBottomNotice').style.display = 'none';
+  }
+}
+
+function acceptTerms() {
+  // Enable and check the checkbox
+  const termsCheckbox = document.getElementById('termsCheck');
+  termsCheckbox.disabled = false;
+  termsCheckbox.checked = true;
+  
+  // Hide the hint
+  document.getElementById('termsReadHint').style.display = 'none';
+  
+  closeTermsModal();
+}
+
+function addSong() {
+  if (songs.length >= 5) return;
+  songs.push({
+    id:Date.now(), title:'', grantDate:'', pubDate:'', copyrightDate:'',
+    grantByAuthor:'', workForHire:'',
+    publisherName:'', proMembership:'', hasAgreement:'',
+    uscoNumber:'', iswcNumber:'', rightsType:'', priorTermination:'',
+    cowriters:[]
+  });
+  renderSongs();
+  document.getElementById('addSongBtn').style.display = songs.length >= 5 ? 'none' : '';
+}
+
+function removeSong(id) {
+  songs = songs.filter(s => s.id !== id);
+  renderSongs();
+  document.getElementById('addSongBtn').style.display = songs.length >= 5 ? 'none' : '';
+}
+
+
+// 🔴 FUNCTION 3: UPDATED renderSongs() - REMOVED ISWC LOOKUP BUTTON
+function renderSongs() {
+  document.getElementById('songsContainer').innerHTML = songs.map((s,i) => `
+    <div class="song-card" id="sc_${s.id}">
+      <div class="song-card-hdr">
+        <span class="song-num">Song ${i+1} of ${songs.length}</span>
+        ${songs.length > 1 ? `<button class="btn-remove" onclick="removeSong(${s.id})">✕ Remove</button>` : ''}
+      </div>
+ 
+      <div class="sc-label">Basic information</div>
+      <div class="field">
+        <label>Song title <span class="req">*</span></label>
+        <input type="text" id="songtitle_${s.id}" value="${s.title}" onchange="updateSong(${s.id},'title',this.value)" placeholder="Exactly as it appears on the original contract"/>
+      </div>
+ 
+      <div class="field-row">
+        <div class="field">
+          <label>USCO Registration Number <span class="opt">optional but recommended</span></label>
+          <div class="lookup-row">
+            <input type="text" id="usco_${s.id}" value="${s.uscoNumber}" onchange="updateSong(${s.id},'uscoNumber',this.value)" placeholder="e.g. PAu 3-000-000"/>
+            <button class="btn-lookup" id="btn_usco_${s.id}" onclick="lookupSong(${s.id},'usco')">Look up →</button>
+          </div>
+          <div class="helper">From copyright.gov/public-records — we'll auto-fill dates if found</div>
+          <div class="lookup-result" id="lr_usco_${s.id}"></div>
+        </div>
+        <div class="field">
+          <label>ISWC Number <span class="opt">optional</span></label>
+          <input type="text" id="iswc_${s.id}" value="${s.iswcNumber}" onchange="updateSong(${s.id},'iswcNumber',this.value)" placeholder="e.g. T-000.000.000-0"/>
+          <div class="helper">International Standard Musical Work Code — from your PRO</div>
+        </div>
+      </div>
+ 
+      <div class="field">
+        <label>Don't have a registration number? <span class="opt">search by title</span></label>
+        <div class="lookup-row">
+          <input type="text" id="titlesearch_${s.id}" placeholder="Enter song title to search databases…" style="flex:1;"/>
+          <button class="btn-lookup" id="btn_title_${s.id}" onclick="lookupByTitle(${s.id})">Search →</button>
+        </div>
+        <div class="lookup-result" id="lr_title_${s.id}"></div>
+      </div>
+ 
+      <div class="field-row">
+        <div class="field">
+          <label>Type of rights being reviewed <span class="opt">optional</span></label>
+          <select onchange="updateSong(${s.id},'rightsType',this.value)">
+            <option value="" ${!s.rightsType?'selected':''}>Select one</option>
+            <option value="composition" ${s.rightsType==='composition'?'selected':''}>Musical composition (publishing)</option>
+            <option value="master" ${s.rightsType==='master'?'selected':''}>Sound recording (master)</option>
+            <option value="both" ${s.rightsType==='both'?'selected':''}>Both composition and master</option>
+            <option value="unsure" ${s.rightsType==='unsure'?'selected':''}>Unsure</option>
+          </select>
+          
+        </div>
+        <div class="field">
+          <label>Current publisher / rights holder <span class="opt">optional</span></label>
+          <input type="text" id="pub_${s.id}" value="${s.publisherName}" onchange="updateSong(${s.id},'publisherName',this.value)" placeholder="e.g. Sony Music Publishing"/>
+        </div>
+      </div>
+ 
+      <div class="divider"></div>
+      <div class="sc-label">Key dates</div>
+ 
+      <div class="field-row">
+        <div class="field">
+          <label>When did you sign the publishing deal? <span class="opt">optional</span></label>
+          <input type="date" id="grantdate_${s.id}" value="${s.grantDate}" onchange="updateSong(${s.id},'grantDate',this.value)"/>
+          <div class="helper">Date you signed the original publishing or assignment contract</div>
+        </div>
+        <div class="field">
+          <label>When was the song first released? <span class="opt">optional</span></label>
+          <input type="date" id="pubdate_${s.id}" value="${s.pubDate}" onchange="updateSong(${s.id},'pubDate',this.value)"/>
+          <div class="helper">Commercial release / first public distribution date</div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Copyright registration date <span class="opt">optional</span></label>
+          <input type="date" id="copyrightdate_${s.id}" value="${s.copyrightDate}" onchange="updateSong(${s.id},'copyrightDate',this.value)"/>
+          <div class="helper">Date on your USCO registration certificate</div>
+        </div>
+        <div class="field">
+          <label>Has a termination notice been served? <span class="opt">optional</span></label>
+          <select onchange="updateSong(${s.id},'priorTermination',this.value)">
+            <option value="" ${!s.priorTermination?'selected':''}>Select one</option>
+            <option value="no" ${s.priorTermination==='no'?'selected':''}>No</option>
+            <option value="yes" ${s.priorTermination==='yes'?'selected':''}>Yes — already served</option>
+            <option value="unsure" ${s.priorTermination==='unsure'?'selected':''}>Unsure</option>
+          </select>
+        </div>
+      </div>
+ 
+      <div class="divider"></div>
+      <div class="sc-label">Legal questions</div>
+ 
+      <div class="field">
+        <label>Did you personally sign the original publishing deal? <span class="req">*</span></label>
+        <div class="radio-group" id="gba_${s.id}">${['yes','no','unsure'].map(v=>`<label class="radio-opt${s.grantByAuthor===v?' selected':''}"><input type="radio" name="gba_${s.id}" value="${v}" ${s.grantByAuthor===v?'checked':''} onchange="updateRadio(${s.id},'grantByAuthor','${v}')"/>${v[0].toUpperCase()+v.slice(1)}</label>`).join('')}</div>
+        <div class="helper">§203 requires the grant to have been signed by the author — not a manager, label, or third party</div>
+      </div>
+      
+      <div class="field">
+        <label>Was this song created as a "work made for hire"? <span class="req">*</span></label>
+        <div class="radio-group" id="wfh_${s.id}">${['yes','no','unsure'].map(v=>`<label class="radio-opt${s.workForHire===v?' selected':''}"><input type="radio" name="wfh_${s.id}" value="${v}" ${s.workForHire===v?'checked':''} onchange="updateRadio(${s.id},'workForHire','${v}')"/>${v[0].toUpperCase()+v.slice(1)}</label>`).join('')}</div>
+        <div class="helper">Work for hire = created as an employee or under a specific written commission agreement. If yes, termination rights do not apply.</div>
+      </div>
+      <div class="field">
+        <label>Do you have a copy of the original contract? <span class="opt">optional</span></label>
+        <div class="radio-group">${['yes','no','unsure'].map(v=>`<label class="radio-opt${s.hasAgreement===v?' selected':''}"><input type="radio" name="agr_${s.id}" value="${v}" ${s.hasAgreement===v?'checked':''} onchange="updateRadio(${s.id},'hasAgreement','${v}')"/>${v[0].toUpperCase()+v.slice(1)}</label>`).join('')}</div>
+        <div class="helper">Having the original agreement significantly strengthens a termination claim</div>
+      </div>
+ 
+      
+    </div>`).join('');
+}
+function updateSong(id,f,v){const s=songs.find(x=>x.id===id);if(s)s[f]=v;}
+function updateRadio(id,f,v){updateSong(id,f,v);renderSongs();}
+function updateCowriterNames(id,val){
+  const s=songs.find(x=>x.id===id);if(!s)return;
+  const names=val.split(',').map(n=>n.trim()).filter(Boolean);
+  while(s.cowriters.length<names.length)s.cowriters.push({name:'',email:''});
+  s.cowriters=s.cowriters.slice(0,Math.max(names.length,1));
+  names.forEach((n,i)=>{if(s.cowriters[i])s.cowriters[i].name=n;});
+}
+function updateCowriterEmails(id,val){
+  const s=songs.find(x=>x.id===id);if(!s)return;
+  val.split(',').map(e=>e.trim()).filter(Boolean).forEach((e,i)=>{if(s.cowriters[i])s.cowriters[i].email=e;});
+}
+
+function validateSongs() {
+  clearErrorHighlights();
+  
+  if (!songs.length) {
+    showErrorMessage(['Please add at least one song.']);
+    return;
+  }
+  
+  const errors = [];
+  
+  for (const s of songs) {
+    const songName = s.title.trim() || 'Untitled song';
+    
+    if (!s.title.trim()) {
+      errors.push(`Song title is required for ${songName}`);
+      highlightField(`title_${s.id}`);
+    }
+    
+    if (!s.grantByAuthor || s.grantByAuthor === '') {
+      errors.push(`"Did you personally sign the original publishing deal?" is required for "${songName}"`);
+      const radioGroup = document.getElementById(`gba_${s.id}`);
+      if (radioGroup) radioGroup.classList.add('field-error');
+    }
+    
+
+    if (!s.workForHire || s.workForHire === '') {
+      errors.push(`"Was this song created as a work made for hire?" is required for "${songName}"`);
+      const radioGroup = document.getElementById(`wfh_${s.id}`);
+      if (radioGroup) radioGroup.classList.add('field-error');
+    }
+  }
+  
+  if (errors.length > 0) {
+    showErrorMessage(errors);
+    return;
+  }
+  
+  document.getElementById('error-display').style.display = 'none';
+  goTo(4);
+}
+
+// 🔴 UPDATED LOOKUP FUNCTION - Calls new database-powered endpoints
+async function lookupSong(songId, type) {
+  const inputEl = document.getElementById(`${type}_${songId}`);
+  const value = inputEl?.value.trim();
+  if (!value) { alert(`Please enter a ${type.toUpperCase()} number first.`); return; }
+
+  const btn = document.getElementById(`btn_${type}_${songId}`);
+  const resultDiv = document.getElementById(`lr_${type}_${songId}`);
+
+  btn.textContent = 'Looking up…';
+  btn.disabled = true;
+  resultDiv.style.display = 'none';
+  resultDiv.className = 'lookup-result';
+
+  try {
+    // 🔴 NEW: Call the new database-powered endpoints
+    const endpoint = type === 'usco' 
+      ? '/api/lookup/usco-by-number' 
+      : '/api/lookup/iswc-by-number';
+    
+    const payload = type === 'usco'
+      ? { registrationNumber: value }
+      : { iswcNumber: value };
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    
+    const data = await res.json();
+    
+    // Convert the new response format to the old handleLookupResult format
+    if (data.found) {
+      const convertedData = {
+        ok: true,
+        data: {
+          title: data.title || '',
+          writers: data.authors || [data.composer] || [],
+          publisher: '',
+          registrationDate: data.registrationDate || '',
+          publicationDate: '',
+          usco: type === 'usco' ? data.registrationNumber : '',
+          iswc: type === 'iswc' ? data.iswc : '',
+          confidence: data.confidence || 'MEDIUM',
+          sources: [data.source || 'Database'],
+          notes: ''
+        }
+      };
+      handleLookupResult(songId, convertedData, type, resultDiv);
+    } else {
+      resultDiv.style.display = 'block';
+      resultDiv.className = 'lookup-result notfound';
+      resultDiv.innerHTML = `⚠ No match found in ${type.toUpperCase()} database. You can still enter dates manually.`;
+    }
+  } catch (err) {
+    console.error('Lookup error:', err);
+    resultDiv.style.display = 'block';
+    resultDiv.className = 'lookup-result error';
+    resultDiv.innerHTML = '✕ Could not reach lookup service. Please enter dates manually.';
+  } finally {
+    const b = document.getElementById(`btn_${type}_${songId}`);
+    if (b) { b.textContent = 'Look up →'; b.disabled = false; }
+  }
+}
+// 🔴 FUNCTION 1: UPDATED TITLE SEARCH - Searches USCO + ASCAP
+async function lookupByTitle(songId) {
+  const titleInput = document.getElementById(`titlesearch_${songId}`);
+  const title = titleInput?.value.trim();
+  if (!title) { alert('Please enter a song title to search.'); return; }
+ 
+  const songwriterName = document.getElementById('userName')?.value.trim() || '';
+ 
+  const btn = document.getElementById(`btn_title_${songId}`);
+  const resultDiv = document.getElementById(`lr_title_${songId}`);
+ 
+  btn.textContent = 'Searching…';
+  btn.disabled = true;
+  resultDiv.style.display = 'none';
+ 
+  try {
+    const res = await fetch('/api/lookup/search-by-title', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ songTitle: title, songwriterName })
+    });
+    
+    const data = await res.json();
+    
+    if (data.ok && data.data) {
+      handleLookupResult(songId, data, 'title', resultDiv);
+    } else {
+      resultDiv.style.display = 'block';
+      resultDiv.className = 'lookup-result notfound';
+      resultDiv.innerHTML = '⚠ No matches found in either database. Please enter information manually.';
+    }
+  } catch (err) {
+    console.error('Title search error:', err);
+    resultDiv.style.display = 'block';
+    resultDiv.className = 'lookup-result error';
+    resultDiv.innerHTML = '✕ Search failed. Please enter dates manually.';
+  } finally {
+    const b = document.getElementById(`btn_title_${songId}`);
+    if (b) { b.textContent = 'Search →'; b.disabled = false; }
+  }
+}
+
+ 
+// 🔴 FUNCTION 2: UPDATED RESULT HANDLER - Shows Writers & Publishers
+function handleLookupResult(songId, data, type, resultDiv) {
+  if (!data.ok) {
+    resultDiv.style.display = 'block';
+    resultDiv.className = 'lookup-result notfound';
+    resultDiv.innerHTML = `⚠ ${data.error || 'No data found. You can still enter dates manually.'}`;
+    return;
+  }
+ 
+  const d = data.data;
+  const s = songs.find(x => x.id === songId);
+  
+  // Auto-fill song data
+  if (s) {
+    if (d.title && !s.title) s.title = d.title;
+    if (d.registrationDate) s.copyrightDate = d.registrationDate;
+    if (d.publicationDate) s.pubDate = d.publicationDate;
+    if (d.grantDate) s.grantDate = d.grantDate;
+    if (d.publisher && !s.publisherName) s.publisherName = d.publisher;
+    if (d.iswc && !s.iswcNumber) s.iswcNumber = d.iswc;
+    if (d.registrationNumber && !s.uscoNumber) s.uscoNumber = d.registrationNumber;  // 🔴 FIXED
+    
+    // Handle writers array from ASCAP
+    if (d.writers && Array.isArray(d.writers) && d.writers.length > 0) {
+      if (!s.cowriters || s.cowriters.length === 0) {
+        s.cowriters = d.writers.map(name => ({ name, email: '' }));
+      }
+    }
+    
+    // Store publishers
+    if (d.publishers && Array.isArray(d.publishers) && d.publishers.length > 0 && !s.publisherName) {
+      s.publisherName = d.publishers.join(', ');
+    }
+  }
+ 
+  // Build display items
+  const found = [
+    d.title && `<strong>Title:</strong> ${d.title}`,
+    d.writers?.length && `<strong>Writers:</strong> ${d.writers.join(', ')}`,
+    d.publishers?.length && `<strong>Publishers:</strong> ${d.publishers.join(', ')}`,
+    d.registrationNumber && `<strong>USCO Registration:</strong> ${d.registrationNumber} · ${d.registrationDate}`,  // 🔴 FIXED
+    d.publicationDate && `<strong>Release date:</strong> ${d.publicationDate}`,
+    d.iswc && `<strong>ISWC:</strong> ${d.iswc}`,
+  ].filter(Boolean);
+ 
+  // Display success box
+  resultDiv.style.display = 'block';
+  resultDiv.className = 'lookup-result found';
+  resultDiv.innerHTML = `
+    <div style="color:var(--green);font-weight:600;margin-bottom:8px;font-size:13px;">
+      ✓ Found in ${d.sourceLabel || 'Database'}
+    </div>
+    ${found.map(f=>`<div style="margin-bottom:4px;color:var(--ink);font-size:13px;">${f}</div>`).join('')}
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid #d1fae5;">
+      <div style="color:var(--green);font-size:11px;font-weight:500;margin-bottom:3px;">Match Confidence: ${d.confidence || 'MEDIUM'}</div>
+      <div style="color:var(--muted);font-size:11px;">Sources: ${(d.sources||['Database']).join(', ')} · Please verify before submitting</div>
+    </div>`;
+ 
+  renderSongs();
+} 
+function parseDate(d){
+  if(d instanceof Date) return d;
+  if(typeof d !== 'string') return new Date(d);
+  const parts = d.split(/[-\/]/).map(x=>parseInt(x,10));
+  if(parts.length !== 3) return new Date(d);
+  const isISO = parts[0] > 31;
+  const year = isISO ? parts[0] : parts[2];
+  const month = (isISO ? parts[1] : parts[0]) - 1;
+  const day = isISO ? parts[2] : parts[1];
+  return new Date(year, month, day);
+}
+function addYears(d,y){
+  const date = parseDate(d);
+  const result = new Date(date);
+  result.setFullYear(result.getFullYear()+y);
+  return result;
+}
+function fmtDate(d){
+  if(!d)return 'Unknown';
+  try{
+    const date = d instanceof Date ? d : parseDate(d);
+    return date.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  }catch{return String(d);}
+}
+
+function computeS203(s){
+  const grant=s.grantDate?parseDate(s.grantDate):null;
+  const pub=s.pubDate?parseDate(s.pubDate):null;
+  const copyright=s.copyrightDate?parseDate(s.copyrightDate):null;
+  const now=new Date();
+  
+  const referenceDate = grant || pub || copyright;
+  if(!referenceDate) return null;
+  
+  let termStart;
+// Always use both grant and publication dates when available
+if(grant && pub){
+  const a=addYears(pub,35);
+  const b=addYears(grant,40);
+  termStart=a<b?a:b;
+}
+else if(pub){
+  termStart=addYears(pub,35);
+}
+else if(grant){
+  termStart=addYears(grant,35);
+}
+else{
+  termStart=addYears(copyright,35);
+}
+  const termEnd=addYears(termStart,5);
+  const noticeOpen=addYears(termStart,-10),noticeClose=addYears(termEnd,-2);
+  const missed=now>termEnd;
+  let statusFlag,statusClass;
+  if(now<noticeOpen){statusFlag='Notice window not yet open';statusClass='flag-upcoming';}
+  else if(now<=noticeClose){statusFlag='Notice window currently open';statusClass='flag-open';}
+  else if(!missed){statusFlag='Notice window closing soon';statusClass='flag-upcoming';}
+  else{statusFlag='Termination window passed';statusClass='flag-passed';}
+  
+  const isApprox = !grant || (!pub && grant);
+  return{regime:'203',termStart,termEnd,noticeOpen,noticeClose,recordationDeadline:termStart,statusFlag,statusClass,missed,isApprox};
+}
+
+function computeS304(s){
+  const copyright=s.copyrightDate?parseDate(s.copyrightDate):null;
+  const pub=s.pubDate?parseDate(s.pubDate):null;
+  const grant=s.grantDate?parseDate(s.grantDate):null;
+  const now=new Date();
+  
+  const cd = pub || copyright || grant;
+  if(!cd) return null;
+  
+  const w4cs=addYears(cd,56);
+  const jan1978=new Date('1978-01-01');
+  const w4csAdjusted = w4cs > jan1978 ? w4cs : jan1978;
+  
+  const w4ce=addYears(w4csAdjusted,5);
+  const w4ds=addYears(cd,75);
+  const w4de=addYears(cd,80);
+  
+  let termStart,termEnd,subsection;
+  if(now<=w4ce){
+    termStart=w4csAdjusted;
+    termEnd=w4ce;
+    subsection='304(c)';
+  }
+  else{
+    termStart=w4ds;
+    termEnd=w4de;
+    subsection='304(d)';
+  }
+  
+  const noticeOpen=addYears(termStart,-10);
+  const noticeClose=addYears(termEnd,-2);
+  const missed=now>termEnd;
+  
+  let statusFlag,statusClass;
+  if(now<noticeOpen){statusFlag='Notice window not yet open';statusClass='flag-upcoming';}
+  else if(now<=noticeClose){statusFlag='Notice window currently open';statusClass='flag-open';}
+  else if(!missed){statusFlag='Notice window closing soon';statusClass='flag-upcoming';}
+  else{statusFlag='Termination window passed';statusClass='flag-passed';}
+  
+  const isApprox = !pub;
+  return{regime:'304',subsection,termStart,termEnd,noticeOpen,noticeClose,recordationDeadline:termStart,statusFlag,statusClass,missed,isApprox};
+}
+
+function computeResults(){
+  computedResults=songs.map(s=>{
+    const r={song:s};
+    if(s.workForHire==='yes'){r.routing='ineligible';r.reason='Works made for hire are not eligible for termination under §203 or §304.';return r;}
+    if(s.workForHire==='unsure'||s.grantByAuthor==='no'){r.routing='needs-review';r.reason=s.workForHire==='unsure'?'Cannot determine eligibility — unclear whether this is a work made for hire.':'Termination under §203 requires the grant to have been executed by the author.';return r;}
+    
+    const gy=s.grantDate?new Date(s.grantDate).getFullYear():null;
+    const py=s.pubDate?new Date(s.pubDate).getFullYear():null;
+    const cy=s.copyrightDate?new Date(s.copyrightDate).getFullYear():null;
+    
+    const refYear = gy || py || cy;
+    
+    if(!refYear){r.routing='needs-review';r.reason='Insufficient date information to determine the applicable regime. Please provide at least a release date, grant date, or copyright registration date.';return r;}
+    
+    let t;
+    if(refYear>=1978){
+      t=computeS203(s);
+      if(t){r.routing='203';r.timing=t;}
+      else{r.routing='needs-review';r.reason='Unable to compute dates from the information provided.';}
+    }
+    else{
+      t=computeS304(s);
+      if(t){r.routing='304';r.timing=t;}
+      else{r.routing='needs-review';r.reason='Unable to compute dates from the information provided.';}
+    }
+    return r;
+  });
+  songs=songs.map((s,i)=>{s.result=computedResults[i];return s;});
+}
+
+function renderResults(){
+  document.getElementById('resultsContainer').innerHTML=computedResults.map((r,i)=>{
+    const s=r.song;
+    const title=s.title||('Song '+(i+1));
+    const badges=[
+      s.uscoNumber && `<span class="usco-badge">USCO: ${s.uscoNumber}</span>`,
+      s.iswcNumber && `<span class="usco-badge">ISWC: ${s.iswcNumber}</span>`,
+    ].filter(Boolean).join(' ');
+    const badgeRow = badges ? `<div style="margin-bottom:10px;">${badges}</div>` : '';
+
+    if(r.routing==='ineligible'||r.routing==='needs-review'){
+      return`<div class="result-card needs-review">
+        ${badgeRow}
+        <div class="result-song-title">${title}</div>
+        <div class="result-regime needs-review">${r.routing==='ineligible'?'⊘ Not eligible — work made for hire':'⚠ Needs professional review'}</div>
+        <p style="font-size:13px;color:var(--amber);">${r.reason}</p>
+      </div>`;
+    }
+    const t=r.timing;
+    const cc=t.missed?'missed':(r.routing==='203'?'s203':'s304');
+    const rc=t.missed?'missed':(r.routing==='203'?'s203':'s304');
+    const rl=r.routing==='203'?'§ 203 — Post-1978 Grant':('§ 304 — Pre-1978 Grant — '+t.subsection);
+    return`<div class="result-card ${cc}">
+      ${badgeRow}
+      <div class="result-song-title">${title}${t.isApprox?' <span style="font-size:11px;font-family:DM Mono,monospace;font-weight:400;color:var(--muted);">(dates approximate)</span>':''}</div>
+      <div class="result-regime ${rc}">${rl}</div>
+      <div style="margin-bottom:12px;"><span class="status-flag ${t.statusClass}">${t.statusFlag}</span></div>
+      <div class="dates-grid">
+        <div class="date-item"><div class="date-label">Termination window opens</div><div class="date-value">${fmtDate(t.termStart)}</div></div>
+        <div class="date-item"><div class="date-label">Termination window closes</div><div class="date-value">${fmtDate(t.termEnd)}</div></div>
+        <div class="date-item"><div class="date-label">Earliest notice date</div><div class="date-value">${fmtDate(t.noticeOpen)}</div></div>
+        <div class="date-item"><div class="date-label">Latest notice date</div><div class="date-value">${fmtDate(t.noticeClose)}</div></div>
+      </div>
+      <div style="background:rgba(255,255,255,.6);border-radius:7px;padding:9px 13px;">
+        <div class="date-label" style="margin-bottom:3px;">Recordation deadline (Copyright Office)</div>
+        <div class="date-value">${fmtDate(t.recordationDeadline)}</div>
+      </div>
+   ${t.missed ? `
+  <p style="font-size:12px;margin-top:10px;color:var(--red);">
+    The statutory termination window appears to have passed. Monetization options may still be available — continue to the next step.
+  </p>
+` : (t.statusClass === 'flag-open' ? `
+  <p style="font-size:12px;margin-top:10px;color:var(--blue);">
+    The statutory termination window is currently open. You may still take action — continue to the next step.
+  </p>
+` : (t.statusFlag === 'Notice window closing soon' ? `
+  <p style="font-size:12px;margin-top:10px;color:var(--amber);">
+    The statutory termination window is currently open but closing soon. Immediate action is recommended — continue to the next step.
+  </p>
+` : `
+  <p style="font-size:12px;margin-top:10px;color:var(--green);">
+    The statutory termination window has not opened yet. Monetization options may still be available — continue to the next step.
+  </p>
+`))}
+      </div>`;
+  }).join('');
+}
+
+function applyDynamicTheme(){
+  const root = document.documentElement;
+  root.style.setProperty('--royalty-bg', '#fffbeb');
+  root.style.setProperty('--royalty-inner-bg', '#fff7ed');
+  root.style.setProperty('--royalty-border', '#f59e0b');
+  root.style.setProperty('--royalty-title', '#b45309');
+  root.style.setProperty('--royalty-icon-bg', '#fde68a');
+}
+
+function nextAfterResults(){
+  applyDynamicTheme();
+  
+  // Check if any song is eligible for termination (not ineligible, and window hasn't passed)
+  const hasEligibleSong = songs.some(s => {
+    const r = s.result;
+    if (!r) return false;
+    // Eligible if routing is 203 or 304, and window not missed
+    if ((r.routing === '203' || r.routing === '304') && r.timing && !r.timing.missed) {
+      return true;
+    }
+    return false;
+  });
+  
+  if (hasEligibleSong) {
+    // Go to "Next Steps" page (Step 7) for eligible songs
+    lastStepBeforeFinal = 5;
+    goTo(7);
+  } else {
+    // Go to "You Still May Have Options" page (Step 6) for ineligible/missed songs
+    lastStepBeforeFinal = 5;
+    goTo(6);
+  }
+}
+
+function backFromFinal(){
+  goTo(lastStepBeforeFinal || 5);
+}
+function toggleMon(optId,inputId){
+  const inp=document.getElementById(inputId);inp.checked=!inp.checked;
+  document.getElementById(optId).classList.toggle('selected',inp.checked);
+}
+function selectFinal(val,fId){
+  selectedFinalChoice=val;
+  document.querySelectorAll('.final-opt').forEach(o=>o.classList.remove('selected'));
+  document.getElementById(fId).classList.add('selected');
+  document.querySelectorAll('input[name=finalChoice]').forEach(r=>{r.checked=r.value===val;});
+
+  const monetizationBox = document.getElementById('monetizationFollowupBox');
+  if (monetizationBox) {
+    monetizationBox.style.display = val === 'monetization' ? 'block' : 'none';
+  }
+}
+
+async function submitForm(){
+  if(!selectedFinalChoice){alert('Please select what you would like to do next.');return;}
+
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true;
+  btn.textContent='Submitting…';
+
+  const clientAnalysisId = `rb_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+  const payload={
+    user:{
+      analysis_id:clientAnalysisId,
+      name:document.getElementById('userName').value.trim(),
+      stageName:document.getElementById('userStageName').value.trim(),
+      email:document.getElementById('userEmail').value.trim(),
+      phone:document.getElementById('userPhone').value.trim(),
+      contact_pref:document.getElementById('userContact').value,
+      country:document.getElementById('userCountry').value,
+      pro:document.getElementById('userPro').value,
+      ipi:document.getElementById('userIPI').value.trim(),
+      pro_id:document.getElementById('userProID').value.trim(),
+      terms_accepted:document.getElementById('termsCheck').checked,
+      consent:document.getElementById('consentCheck').checked,
+      marketing:document.getElementById('marketingCheck').checked,
+      mon_sale:document.getElementById('mon_sale')?.checked||false,
+      mon_license:document.getElementById('mon_license')?.checked||false,
+      mon_catalog:document.getElementById('mon_catalog')?.checked||false,
+      mon_royalties:document.getElementById('monRoyalties')?.value||'',
+      mon_email:document.getElementById('monEmail')?.value.trim()||'',
+      mon_notes:document.getElementById('monNotes')?.value.trim()||'',
+      final_monetization_thoughts:document.getElementById('finalMonetizationThoughts')?.value.trim()||'',
+      final_choice:selectedFinalChoice,
+    },
+    songs:songs.map(s=>({
+      title:s.title,
+      grantDate:s.grantDate,
+      pubDate:s.pubDate,
+      copyrightDate:s.copyrightDate,
+      grantByAuthor:s.grantByAuthor,
+      // pubRights:s.pubRights,
+      workForHire:s.workForHire,
+      publisherName:s.publisherName,
+      proMembership:s.proMembership,
+      hasAgreement:s.hasAgreement,
+      uscoNumber:s.uscoNumber,
+      iswcNumber:s.iswcNumber,
+      rightsType:s.rightsType,
+      priorTermination:s.priorTermination,
+      cowriters:s.cowriters,
+      result:s.result?{
+        routing:s.result.routing,
+        reason:s.result.reason||'',
+        timing:s.result.timing||null
+      }:null,
+    })),
+  };
+
+  try{
+    const res=await fetch('http://localhost:3000/api/submit',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+
+    const data=await res.json();
+
+    if(data.ok){
+      const savedAnalysisId = data.analysis_id || clientAnalysisId;
+      localStorage.setItem('analysisId', savedAnalysisId);
+
+      const firstSong = songs[0] || {};
+      const resultData = {
+        analysisId: savedAnalysisId,
+        songTitle: firstSong.title || '',
+        songwriterName: document.getElementById('userName').value.trim(),
+        grantDate: firstSong.grantDate || '',
+        compositionDate: firstSong.pubDate || firstSong.copyrightDate || firstSong.grantDate || '',
+        publicationDate: firstSong.pubDate || '',
+        copyrightDate: firstSong.copyrightDate || '',
+        registrationDate: firstSong.copyrightDate || '',
+        uscoNumber: firstSong.uscoNumber || '',
+        uscoRegistration: firstSong.uscoNumber || '',
+        iswcNumber: firstSong.iswcNumber || '',
+        iswc: firstSong.iswcNumber || '',
+        rightsType: firstSong.rightsType || '',
+        grantType: firstSong.rightsType || '',
+        publisherName: firstSong.publisherName || '',
+        proAffiliation: document.getElementById('userPro').value || '',
+        pro: document.getElementById('userPro').value || '',
+        ipi: document.getElementById('userIPI').value.trim(),
+        proId: document.getElementById('userProID').value.trim(),
+        cowriters: Array.isArray(firstSong.cowriters) ? firstSong.cowriters.map(c => c.name).filter(Boolean).join(', ') : '',
+        applicableSection: firstSong.result?.routing === '203' ? '§203' : firstSong.result?.routing === '304' ? '§304' : 'Needs Review',
+        statusFlag: firstSong.result?.timing?.statusFlag || '',
+        windowMissed: firstSong.result?.timing?.missed ? 'Yes' : 'No',
+        terminationWindowStart: firstSong.result?.timing?.termStart || '',
+        terminationWindowEnd: firstSong.result?.timing?.termEnd || '',
+        noticeWindowStart: firstSong.result?.timing?.noticeOpen || '',
+        noticeWindowEnd: firstSong.result?.timing?.noticeClose || '',
+        userEmail: document.getElementById('userEmail').value.trim(),
+        userName: document.getElementById('userName').value.trim()
+      };
+
+      localStorage.setItem('submissionData', JSON.stringify(resultData));
+      window.location.href = '/success';
+    } else {
+      alert(data.error || 'Something went wrong. Please try again.');
+      btn.disabled=false;
+      btn.textContent='Submit →';
+    }
+  }catch(err){
+    console.error(err);
+    alert('Could not reach the server. Please try again.');
+    btn.disabled=false;
+    btn.textContent='Submit →';
+  }
+}
+
+updateProgress();
+</script>
+</body>
+</html>
