@@ -13,8 +13,16 @@ const { analyzeSubmission } = require('./analysis');
 
 // 🔴 NEW: Import database search module
 const dbSearch = require('./database-search');
-// 🔴 PRE-BUILD INDEX ON SERVER STARTUP
-dbSearch.initializeIndex();
+
+// 🔴 PRE-BUILD INDEX ON SERVER STARTUP (with error handling)
+try {
+  console.log('[INIT] 🚀 Pre-building USCO index...');
+  dbSearch.initializeIndex();
+  console.log('[INIT] ✅ USCO index built successfully');
+} catch (err) {
+  console.log('[INIT] ⚠️ USCO index not available (optional) - continuing without it');
+  console.log('[INIT] Error:', err.message);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -320,7 +328,8 @@ app.post('/api/submit', async (req, res) => {
     // AUTO-FORWARD to main database for real-time sync
     // ════════════════════════════════════════════════════════════════
     try {
-      const mainDbUrl = 'http://localhost:5000/api/sync/from-rightsback';
+      // Use environment variable for main DB URL, fallback to localhost for dev
+      const mainDbUrl = process.env.ADAGE_MUSIC_API_URL || 'http://localhost:5000/api/sync/from-rightsback';
       
       const forwardData = {
         full_name: user.name || user.email.split('@')[0],
@@ -367,6 +376,7 @@ app.post('/api/submit', async (req, res) => {
     });
   }
 });
+
 // 🔴 FIXED ENDPOINT 1: Lookup USCO by registration number
 app.post('/api/lookup/usco-by-number', async (req, res) => {
   try {
@@ -377,7 +387,7 @@ app.post('/api/lookup/usco-by-number', async (req, res) => {
     }
 
     console.log('[API] USCO lookup by number:', registrationNumber);
-    const result = await dbSearch.lookupUSCOByNumber(registrationNumber); // ← FIXED!
+    const result = await dbSearch.lookupUSCOByNumber(registrationNumber);
     
     res.json(result);
   } catch (error) {
@@ -585,7 +595,10 @@ app.get('*', (req, res) => {
   );
 });
 
-app.listen(PORT, () => {
-  console.log(`\nRights Back → http://localhost:${PORT}`);
-  console.log(`Admin Panel → http://localhost:${PORT}/admin`);
+// ✅ FIXED: Bind to 0.0.0.0 for Railway, listen on dynamic PORT
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`\n✅ Rights Back Server Running`);
+  console.log(`   Port: ${PORT}`);
+  console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`   Admin Panel: /admin\n`);
 });
