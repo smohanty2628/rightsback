@@ -1,10 +1,19 @@
 const fs = require('fs');
 const path = require('path');
 
-// Use persistent volume in production, local directory in development
-const CSV_PATH = process.env.NODE_ENV === 'production'
-  ? '/app/data/submissions.csv'
-  : path.join(__dirname, 'submissions.csv');
+// ✅ FIXED: Ensure data directory exists in production
+const DATA_DIR = process.env.NODE_ENV === 'production'
+  ? '/app/data'
+  : __dirname;
+
+// Create directory if it doesn't exist
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  console.log(`[STORAGE] Created directory: ${DATA_DIR}`);
+}
+
+const CSV_PATH = path.join(DATA_DIR, 'submissions.csv');
+console.log(`[STORAGE] CSV path: ${CSV_PATH}`);
 
 const HEADERS = [
   'submitted_at',
@@ -125,6 +134,7 @@ function parseCSV(content) {
 
 function ensureCSVHeaders() {
   if (!fs.existsSync(CSV_PATH)) {
+    console.log('[STORAGE] Creating new CSV file with headers');
     fs.writeFileSync(CSV_PATH, HEADERS.join(',') + '\n', 'utf8');
     return;
   }
@@ -135,6 +145,8 @@ function ensureCSVHeaders() {
   const missingHeaders = HEADERS.filter(h => !headers.includes(h));
 
   if (missingHeaders.length === 0) return;
+
+  console.log('[STORAGE] Migrating CSV with missing headers:', missingHeaders);
 
   const migratedRows = rows.map(row => {
     const fixed = {};
@@ -173,6 +185,7 @@ function writeWithRetry(filePath, data, retries = 5, delay = 300) {
   for (let i = 0; i < retries; i++) {
     try {
       fs.appendFileSync(filePath, data, 'utf8');
+      console.log(`[STORAGE] ✅ Appended ${data.split('\n').length - 1} row(s) to CSV`);
       return;
     } catch (err) {
       if (err.code === 'EBUSY' && i < retries - 1) {
@@ -180,6 +193,7 @@ function writeWithRetry(filePath, data, retries = 5, delay = 300) {
 
         while (Date.now() - start < delay) {}
       } else {
+        console.error('[STORAGE] ❌ Write failed:', err.message);
         throw err;
       }
     }
@@ -204,6 +218,9 @@ function normalizeFinalChoice(choice) {
 function saveSubmission(payload) {
   const { user = {}, songs = [], analysis_id = '' } = payload || {};
   const now = new Date().toISOString();
+
+  console.log(`[STORAGE] Saving submission: ${analysis_id}`);
+  console.log(`[STORAGE] User: ${user.email}, Songs: ${songs.length}`);
 
   ensureCSVHeaders();
 
@@ -286,6 +303,8 @@ function saveSubmission(payload) {
 
   if (rows.length) {
     writeWithRetry(CSV_PATH, rows.join('\n') + '\n');
+  } else {
+    console.log('[STORAGE] ⚠️ No rows to save');
   }
 }
 
