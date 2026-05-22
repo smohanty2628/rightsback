@@ -31,8 +31,22 @@ const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'admin';
 const ADMIN_TOKEN = Buffer.from(`${ADMIN_USER}:${ADMIN_PASS}`).toString('base64');
 
-const CSV_PATH = path.join(__dirname, 'submissions.csv');
-const CONTACTED_PATH = path.join(__dirname, 'contacted.json');
+// ✅ FIXED: Use same path as storage.js
+const DATA_DIR = process.env.NODE_ENV === 'production'
+  ? '/app/data'
+  : __dirname;
+
+// Create directory if it doesn't exist
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  console.log(`[INIT] Created data directory: ${DATA_DIR}`);
+}
+
+const CSV_PATH = path.join(DATA_DIR, 'submissions.csv');
+const CONTACTED_PATH = path.join(DATA_DIR, 'contacted.json');
+
+console.log(`[INIT] CSV path: ${CSV_PATH}`);
+console.log(`[INIT] Contacted path: ${CONTACTED_PATH}`);
 
 const ANALYSIS_DIR = path.join(__dirname, 'analysis_records');
 
