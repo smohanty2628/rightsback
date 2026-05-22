@@ -1,7 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const CSV_PATH = path.join(__dirname, 'submissions.csv');
+// Use persistent volume in production, local directory in development
+const CSV_PATH = process.env.NODE_ENV === 'production'
+  ? '/app/data/submissions.csv'
+  : path.join(__dirname, 'submissions.csv');
 
 const HEADERS = [
   'submitted_at',
