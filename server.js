@@ -288,7 +288,10 @@ app.use(express.static(
   path.join(__dirname, 'public')
 ));
 
+// ⚡ OPTIMIZED: Fast response, email sent in background
 app.post('/api/submit', async (req, res) => {
+  const startTime = Date.now();
+  
   try {
     const { user, songs } = req.body || {};
 
@@ -308,65 +311,72 @@ app.post('/api/submit', async (req, res) => {
 
     const analysis_id = crypto.randomUUID();
 
+    // ✅ STEP 1: Save to CSV immediately (shows in admin panel)
     saveSubmission({
       analysis_id,
       user,
       songs
     });
 
-    try {
-      await sendNotification({
-        analysis_id,
-        user,
-        songs
-      });
-    } catch (emailErr) {
-      console.error('[email notification failed]', emailErr);
-    }
+    console.log(`[SUBMIT] ✅ Saved in ${Date.now() - startTime}ms`);
 
-    // ════════════════════════════════════════════════════════════════
-    // AUTO-FORWARD to main database for real-time sync
-    // ════════════════════════════════════════════════════════════════
-    try {
-      // Use environment variable for main DB URL, fallback to localhost for dev
-      const mainDbUrl = process.env.ADAGE_MUSIC_API_URL || 'http://localhost:5000/api/sync/from-rightsback';
-      
-      const forwardData = {
-        full_name: user.name || user.email.split('@')[0],
-        email: user.email,
-        phone: user.phone || null,
-        pro_affiliation: user.pro || null,
-        ipi_number: user.ipi || null,
-        pro_id: user.pro_id || null
-      };
-
-      const syncResponse = await fetch(mainDbUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(forwardData)
-      });
-
-      const syncResult = await syncResponse.json();
-      
-      if (syncResult.ok) {
-        console.log('[Database Sync] ✓', syncResult.message);
-        if (syncResult.matched) {
-          console.log(`  → Matched songwriter ID ${syncResult.songwriter_id}`);
-        }
-      } else {
-        console.warn('[Database Sync] Warning:', syncResult.error);
-      }
-    } catch (syncErr) {
-      console.error('[Database Sync] Failed:', syncErr.message);
-      // Don't fail the submission if sync fails
-    }
-    // ════════════════════════════════════════════════════════════════
-
+    // ✅ STEP 2: Return response IMMEDIATELY (user doesn't wait)
     res.json({
       ok: true,
       analysis_id,
       redirectTo: '/results'
     });
+
+    // ✅ STEP 3: Send email in BACKGROUND (non-blocking)
+    setImmediate(async () => {
+      try {
+        console.log('[EMAIL] 📧 Sending notification...');
+        await sendNotification({
+          analysis_id,
+          user,
+          songs
+        });
+        console.log('[EMAIL] ✅ Notification sent');
+      } catch (emailErr) {
+        console.error('[EMAIL] ❌ Failed:', emailErr.message);
+      }
+    });
+
+    // ⚠️ DATABASE SYNC DISABLED (not needed yet - will add later)
+    // When Adage Music backend is ready, uncomment this:
+    /*
+    setImmediate(async () => {
+      try {
+        const mainDbUrl = process.env.ADAGE_MUSIC_API_URL || 'http://localhost:5000/api/sync/from-rightsback';
+        
+        const forwardData = {
+          full_name: user.name || user.email.split('@')[0],
+          email: user.email,
+          phone: user.phone || null,
+          pro_affiliation: user.pro || null,
+          ipi_number: user.ipi || null,
+          pro_id: user.pro_id || null
+        };
+
+        const syncResponse = await fetch(mainDbUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(forwardData)
+        });
+
+        const syncResult = await syncResponse.json();
+        
+        if (syncResult.ok) {
+          console.log('[Database Sync] ✓', syncResult.message);
+        } else {
+          console.warn('[Database Sync] Warning:', syncResult.error);
+        }
+      } catch (syncErr) {
+        console.error('[Database Sync] Failed:', syncErr.message);
+      }
+    });
+    */
+
   } catch (err) {
     console.error('[submit]', err);
 
