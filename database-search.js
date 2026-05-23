@@ -102,7 +102,7 @@ if (isGzipped) {
       console.log(`[USCO INDEX] 📊 Processed ${lineCount.toLocaleString()} lines...`);
     }
 
-    if (lineCount > 4000000) {
+    if (lineCount > 1000000) {
       console.log('[USCO INDEX] Reached 4M line limit');
       break;
     }
