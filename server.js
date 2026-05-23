@@ -33,7 +33,8 @@ app.post('/admin/upload-usco', upload.single('file'), async (req, res) => {
   try {
     const dest = '/app/data/usco/reg_musical_work.csv.gz';
     fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.renameSync(req.file.path, dest);
+    fs.copyFileSync(req.file.path, dest);
+fs.unlinkSync(req.file.path); // Delete temp file
     res.json({ success: true, message: 'USCO file uploaded to ' + dest });
   } catch (error) {
     res.status(500).json({ error: error.message });
