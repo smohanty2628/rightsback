@@ -1,16 +1,19 @@
+@"
 // ============================================
 // CLEANED DATABASE-SEARCH.JS
 // ✅ USCO only (registration dates, authors)
 // ✅ Wikipedia API (release dates)
-// ❌ ASCAP REMOVED (not needed)
+// ✅ SUPPORTS GZIPPED FILES (.csv.gz)
 // ============================================
 
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const axios = require('axios');
+const zlib = require('zlib');
 
 const USCO_PATH = path.join(__dirname, 'data', 'usco', 'reg_musical_work.csv');
+const USCO_PATH_GZ = USCO_PATH + '.gz';
 
 let uscoIndex = null;
 let uscoIndexBuilt = false;
@@ -52,8 +55,20 @@ async function buildUSCOIndex() {
     return uscoIndex;
   }
 
-  if (!fs.existsSync(USCO_PATH)) {
-    throw new Error(`USCO file not found at ${USCO_PATH}`);
+  // Check for gzipped file first, then uncompressed
+  let filePath = null;
+  let isGzipped = false;
+  
+  if (fs.existsSync(USCO_PATH_GZ)) {
+    filePath = USCO_PATH_GZ;
+    isGzipped = true;
+    console.log('[USCO INDEX] Found gzipped file:', USCO_PATH_GZ);
+  } else if (fs.existsSync(USCO_PATH)) {
+    filePath = USCO_PATH;
+    isGzipped = false;
+    console.log('[USCO INDEX] Found uncompressed file:', USCO_PATH);
+  } else {
+    throw new Error(`USCO file not found at ${USCO_PATH} or ${USCO_PATH_GZ}`);
   }
 
   isBuilding.usco = true;
@@ -63,7 +78,16 @@ async function buildUSCOIndex() {
   uscoIndex = new Map();
   let lineCount = 0;
 
-  const fileStream = fs.createReadStream(USCO_PATH, { encoding: 'utf8' });
+  // Create read stream (with or without gunzip)
+  let fileStream;
+  if (isGzipped) {
+    fileStream = fs.createReadStream(filePath)
+      .pipe(zlib.createGunzip())
+      .setEncoding('utf8');
+  } else {
+    fileStream = fs.createReadStream(filePath, { encoding: 'utf8' });
+  }
+  
   const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
 
   let headers = [];
@@ -454,3 +478,4 @@ module.exports = {
   searchByTitle,
   initializeIndex
 };
+"@ | Out-File -FilePath database-search.js -Encoding UTF8 -Force
