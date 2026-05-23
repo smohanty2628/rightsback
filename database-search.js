@@ -1,9 +1,8 @@
-@"
 // ============================================
 // CLEANED DATABASE-SEARCH.JS
 // ✅ USCO only (registration dates, authors)
 // ✅ Wikipedia API (release dates)
-// ✅ SUPPORTS GZIPPED FILES (.csv.gz)
+// ❌ ASCAP REMOVED (not needed)
 // ============================================
 
 const fs = require('fs');
@@ -56,20 +55,20 @@ async function buildUSCOIndex() {
   }
 
   // Check for gzipped file first, then uncompressed
-  let filePath = null;
-  let isGzipped = false;
-  
-  if (fs.existsSync(USCO_PATH_GZ)) {
-    filePath = USCO_PATH_GZ;
-    isGzipped = true;
-    console.log('[USCO INDEX] Found gzipped file:', USCO_PATH_GZ);
-  } else if (fs.existsSync(USCO_PATH)) {
-    filePath = USCO_PATH;
-    isGzipped = false;
-    console.log('[USCO INDEX] Found uncompressed file:', USCO_PATH);
-  } else {
-    throw new Error(`USCO file not found at ${USCO_PATH} or ${USCO_PATH_GZ}`);
-  }
+let filePath = null;
+let isGzipped = false;
+
+if (fs.existsSync(USCO_PATH_GZ)) {
+  filePath = USCO_PATH_GZ;
+  isGzipped = true;
+  console.log('[USCO INDEX] Found gzipped file:', USCO_PATH_GZ);
+} else if (fs.existsSync(USCO_PATH)) {
+  filePath = USCO_PATH;
+  isGzipped = false;
+  console.log('[USCO INDEX] Found uncompressed file:', USCO_PATH);
+} else {
+  throw new Error(`USCO file not found at ${USCO_PATH} or ${USCO_PATH_GZ}`);
+}
 
   isBuilding.usco = true;
   console.log('[USCO INDEX] 🔨 Building from CSV...');
@@ -79,15 +78,14 @@ async function buildUSCOIndex() {
   let lineCount = 0;
 
   // Create read stream (with or without gunzip)
-  let fileStream;
-  if (isGzipped) {
-    fileStream = fs.createReadStream(filePath)
-      .pipe(zlib.createGunzip())
-      .setEncoding('utf8');
-  } else {
-    fileStream = fs.createReadStream(filePath, { encoding: 'utf8' });
-  }
-  
+let fileStream;
+if (isGzipped) {
+  fileStream = fs.createReadStream(filePath)
+    .pipe(zlib.createGunzip())
+    .setEncoding('utf8');
+} else {
+  fileStream = fs.createReadStream(filePath, { encoding: 'utf8' });
+}
   const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
 
   let headers = [];
@@ -478,4 +476,3 @@ module.exports = {
   searchByTitle,
   initializeIndex
 };
-"@ | Out-File -FilePath database-search.js -Encoding UTF8 -Force
