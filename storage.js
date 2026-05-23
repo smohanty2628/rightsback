@@ -6,13 +6,15 @@ const DATA_DIR = process.env.NODE_ENV === 'production'
   ? '/app/data'
   : __dirname;
 
-// Create directory if it doesn't exist
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  console.log(`[STORAGE] Created directory: ${DATA_DIR}`);
+const SONGWRITER_LEADS_DIR = path.join(DATA_DIR, 'songwriter_leads');
+
+// Create directories if they don't exist
+if (!fs.existsSync(SONGWRITER_LEADS_DIR)) {
+  fs.mkdirSync(SONGWRITER_LEADS_DIR, { recursive: true });
+  console.log(`[STORAGE] Created directory: ${SONGWRITER_LEADS_DIR}`);
 }
 
-const CSV_PATH = path.join(DATA_DIR, 'submissions.csv');
+const CSV_PATH = path.join(SONGWRITER_LEADS_DIR, 'submissions.csv');
 console.log(`[STORAGE] CSV path: ${CSV_PATH}`);
 
 const HEADERS = [

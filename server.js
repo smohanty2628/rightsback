@@ -51,28 +51,26 @@ const DATA_DIR = process.env.NODE_ENV === 'production'
   ? '/app/data'
   : __dirname;
 
-// Create directory if it doesn't exist
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  console.log(`[INIT] Created data directory: ${DATA_DIR}`);
-}
+// ✅ FIXED: Use same path as storage.js
+const DATA_DIR = process.env.NODE_ENV === 'production'
+  ? '/app/data'
+  : __dirname;
 
-const CSV_PATH = path.join(DATA_DIR, 'submissions.csv');
-const CONTACTED_PATH = path.join(DATA_DIR, 'contacted.json');
+const SONGWRITER_LEADS_DIR = path.join(DATA_DIR, 'songwriter_leads');
+const DELETED_RECORDS_DIR = path.join(DATA_DIR, 'deleted_records');
+
+const CSV_PATH = path.join(SONGWRITER_LEADS_DIR, 'submissions.csv');
+const CONTACTED_PATH = path.join(SONGWRITER_LEADS_DIR, 'contacted.json');
+const ANALYSIS_DIR = path.join(SONGWRITER_LEADS_DIR, 'analysis_records');
+
+const archiveRoot = DELETED_RECORDS_DIR;
+const submissionsArchive = path.join(archiveRoot, 'submissions');
 
 console.log(`[INIT] CSV path: ${CSV_PATH}`);
 console.log(`[INIT] Contacted path: ${CONTACTED_PATH}`);
 
-const ANALYSIS_DIR = path.join(__dirname, 'analysis_records');
-
-if (!fs.existsSync(ANALYSIS_DIR)) {
-  fs.mkdirSync(ANALYSIS_DIR, { recursive: true });
-}
-
-const archiveRoot = path.join(__dirname, 'deleted_records');
-const submissionsArchive = path.join(archiveRoot, 'submissions');
-
-[archiveRoot, submissionsArchive].forEach(dir => {
+// Create all directories
+[SONGWRITER_LEADS_DIR, ANALYSIS_DIR, archiveRoot, submissionsArchive].forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
