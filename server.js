@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
@@ -11,27 +11,41 @@ const { sendNotification } = require('./email');
 const { lookupByUSCO, lookupByISWC, lookupBySongTitle } = require('./lookup');
 const { analyzeSubmission } = require('./analysis');
 
-// 🔴 NEW: Import database search module
+// ðŸ”´ NEW: Import database search module
 const dbSearch = require('./database-search');
 
-// 🔴 PRE-BUILD INDEX ON SERVER STARTUP (with error handling)
+// ðŸ”´ PRE-BUILD INDEX ON SERVER STARTUP (with error handling)
 try {
-  console.log('[INIT] 🚀 Pre-building USCO index...');
+  console.log('[INIT] ðŸš€ Pre-building USCO index...');
   dbSearch.initializeIndex();
-  console.log('[INIT] ✅ USCO index built successfully');
+  console.log('[INIT] âœ… USCO index built successfully');
 } catch (err) {
-  console.log('[INIT] ⚠️ USCO index not available (optional) - continuing without it');
+  console.log('[INIT] âš ï¸ USCO index not available (optional) - continuing without it');
   console.log('[INIT] Error:', err.message);
 }
 
 const app = express();
+// 🔴 TEMPORARY UPLOAD ENDPOINT (REMOVE AFTER UPLOAD)
+const multer = require('multer');
+const upload = multer({ dest: '/tmp/' });
+
+app.post('/admin/upload-usco', upload.single('file'), async (req, res) => {
+  try {
+    const dest = '/app/data/usco/reg_musical_work.csv.gz';
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.renameSync(req.file.path, dest);
+    res.json({ success: true, message: 'USCO file uploaded to ' + dest });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 const PORT = process.env.PORT || 3000;
 
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'admin';
 const ADMIN_TOKEN = Buffer.from(`${ADMIN_USER}:${ADMIN_PASS}`).toString('base64');
 
-// ✅ FIXED: Use same path as storage.js
+// âœ… FIXED: Use same path as storage.js
 const DATA_DIR = process.env.NODE_ENV === 'production'
   ? '/app/data'
   : __dirname;
@@ -302,7 +316,7 @@ app.use(express.static(
   path.join(__dirname, 'public')
 ));
 
-// ⚡ OPTIMIZED: Fast response, email sent in background
+// âš¡ OPTIMIZED: Fast response, email sent in background
 app.post('/api/submit', async (req, res) => {
   const startTime = Date.now();
   
@@ -325,38 +339,38 @@ app.post('/api/submit', async (req, res) => {
 
     const analysis_id = crypto.randomUUID();
 
-    // ✅ STEP 1: Save to CSV immediately (shows in admin panel)
+    // âœ… STEP 1: Save to CSV immediately (shows in admin panel)
     saveSubmission({
       analysis_id,
       user,
       songs
     });
 
-    console.log(`[SUBMIT] ✅ Saved in ${Date.now() - startTime}ms`);
+    console.log(`[SUBMIT] âœ… Saved in ${Date.now() - startTime}ms`);
 
-    // ✅ STEP 2: Return response IMMEDIATELY (user doesn't wait)
+    // âœ… STEP 2: Return response IMMEDIATELY (user doesn't wait)
     res.json({
       ok: true,
       analysis_id,
       redirectTo: '/results'
     });
 
-    // ✅ STEP 3: Send email in BACKGROUND (non-blocking)
+    // âœ… STEP 3: Send email in BACKGROUND (non-blocking)
     setImmediate(async () => {
       try {
-        console.log('[EMAIL] 📧 Sending notification...');
+        console.log('[EMAIL] ðŸ“§ Sending notification...');
         await sendNotification({
           analysis_id,
           user,
           songs
         });
-        console.log('[EMAIL] ✅ Notification sent');
+        console.log('[EMAIL] âœ… Notification sent');
       } catch (emailErr) {
-        console.error('[EMAIL] ❌ Failed:', emailErr.message);
+        console.error('[EMAIL] âŒ Failed:', emailErr.message);
       }
     });
 
-    // ⚠️ DATABASE SYNC DISABLED (not needed yet - will add later)
+    // âš ï¸ DATABASE SYNC DISABLED (not needed yet - will add later)
     // When Adage Music backend is ready, uncomment this:
     /*
     setImmediate(async () => {
@@ -381,7 +395,7 @@ app.post('/api/submit', async (req, res) => {
         const syncResult = await syncResponse.json();
         
         if (syncResult.ok) {
-          console.log('[Database Sync] ✓', syncResult.message);
+          console.log('[Database Sync] âœ“', syncResult.message);
         } else {
           console.warn('[Database Sync] Warning:', syncResult.error);
         }
@@ -401,7 +415,7 @@ app.post('/api/submit', async (req, res) => {
   }
 });
 
-// 🔴 FIXED ENDPOINT 1: Lookup USCO by registration number
+// ðŸ”´ FIXED ENDPOINT 1: Lookup USCO by registration number
 app.post('/api/lookup/usco-by-number', async (req, res) => {
   try {
     const { registrationNumber } = req.body;
@@ -420,7 +434,7 @@ app.post('/api/lookup/usco-by-number', async (req, res) => {
   }
 });
 
-// 🔴 FIXED ENDPOINT 2: ISWC disabled (not implemented)
+// ðŸ”´ FIXED ENDPOINT 2: ISWC disabled (not implemented)
 app.post('/api/lookup/iswc-by-number', async (req, res) => {
   res.json({ 
     found: false, 
@@ -428,7 +442,7 @@ app.post('/api/lookup/iswc-by-number', async (req, res) => {
   });
 });
 
-// 🔴 NEW ENDPOINT 3: Search by song title (searches BOTH databases)
+// ðŸ”´ NEW ENDPOINT 3: Search by song title (searches BOTH databases)
 app.post('/api/lookup/search-by-title', async (req, res) => {
   try {
     const { songTitle, songwriterName } = req.body;
@@ -619,10 +633,11 @@ app.get('*', (req, res) => {
   );
 });
 
-// ✅ FIXED: Bind to 0.0.0.0 for Railway, listen on dynamic PORT
+// âœ… FIXED: Bind to 0.0.0.0 for Railway, listen on dynamic PORT
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n✅ Rights Back Server Running`);
+  console.log(`\nâœ… Rights Back Server Running`);
   console.log(`   Port: ${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`   Admin Panel: /admin\n`);
 });
+
