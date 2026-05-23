@@ -1,6 +1,7 @@
 {
   "name": "rightsback",
   "version": "1.0.1",
+  "resend": "^3.0.0"
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
