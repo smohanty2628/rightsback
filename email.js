@@ -1,21 +1,6 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-function createTransport() {
-  // Try secure connection (port 465) - might work better on Railway
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // use SSL
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD,
-    },
-    // Add timeouts to prevent hanging
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 5000,
-    socketTimeout: 10000,
-  });
-}
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 function fmtDate(str) {
   if (!str) return 'Not provided';
@@ -52,78 +37,77 @@ function buildNotificationEmail(payload) {
     : '';
   
   const html = `
-  <div style="font-family:Arial;padding:20px">
-    <h2>✨ New Rights Back Submission</h2>
+  <div style="font-family:Arial;padding:20px;max-width:600px">
+    <h2 style="color:#1a1a18">✨ New Rights Back Submission</h2>
     
-    <h3>👤 Contact Info</h3>
-    <p><strong>Name:</strong> ${user.name || 'Not provided'}</p>
-    <p><strong>Email:</strong> ${user.email}</p>
-    <p><strong>Phone:</strong> ${user.phone || 'Not provided'}</p>
+    <div style="background:#f5f5f5;padding:15px;border-radius:8px;margin:15px 0">
+      <h3 style="margin-top:0">👤 Contact Info</h3>
+      <p><strong>Name:</strong> ${user.name || 'Not provided'}</p>
+      <p><strong>Email:</strong> <a href="mailto:${user.email}">${user.email}</a></p>
+      <p><strong>Phone:</strong> ${user.phone || 'Not provided'}</p>
+      ${user.pro ? `<p><strong>PRO:</strong> ${user.pro}</p>` : ''}
+    </div>
     
-    <h3>💼 Monetization Interest</h3>
-    <p>${interests}</p>
-    <p><strong>Final choice:</strong> ${user.final_choice || 'Not specified'}</p>
-    ${royaltyMessage}
+    <div style="background:#fffbeb;padding:15px;border-radius:8px;margin:15px 0">
+      <h3 style="margin-top:0">💼 Monetization Interest</h3>
+      <p>${interests}</p>
+      <p><strong>Final choice:</strong> ${user.final_choice || 'Not specified'}</p>
+      ${royaltyMessage}
+    </div>
     
-    <h3>🎵 Songs (${songs.length})</h3>
-    <ul>
-      ${songs.map(s => `<li>${s.title || 'Untitled'}</li>`).join('')}
-    </ul>
+    <div style="background:#f0fdf4;padding:15px;border-radius:8px;margin:15px 0">
+      <h3 style="margin-top:0">🎵 Songs (${songs.length})</h3>
+      <ul>
+        ${songs.map(s => `<li><strong>${s.title || 'Untitled'}</strong>${s.uscoNumber ? ` - USCO: ${s.uscoNumber}` : ''}</li>`).join('')}
+      </ul>
+    </div>
     
-    <hr style="margin:20px 0">
-    <p style="font-size:12px;color:#666">
+    <hr style="margin:20px 0;border:none;border-top:1px solid #e5e5e5">
+    <p style="font-size:12px;color:#888">
       Submitted: ${new Date().toLocaleString('en-US')}
     </p>
   </div>
   `;
   
   return {
-    from: `"Rights Back" <${process.env.GMAIL_USER}>`,
-    to: process.env.NOTIFY_EMAIL,
+    from: 'Rights Back <notifications@rightsback.net>',
+    to: process.env.NOTIFY_EMAIL || user.email,
     subject: `🎵 New submission — ${user.name || user.email}`,
     html,
   };
 }
 
 async function sendNotification(payload) {
-  // Check if email is configured
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    console.log('[EMAIL] ⚠️ Email not configured (missing GMAIL_USER or GMAIL_APP_PASSWORD)');
+  // Check if Resend is configured
+  if (!process.env.RESEND_API_KEY) {
+    console.log('[EMAIL] ⚠️ Email not configured (missing RESEND_API_KEY)');
     return;
   }
   
-  if (!process.env.NOTIFY_EMAIL) {
-    console.log('[EMAIL] ⚠️ Email not configured (missing NOTIFY_EMAIL)');
-    return;
-  }
-  
-  console.log('[EMAIL] 📧 Sending notification...');
-  console.log('[EMAIL] From:', process.env.GMAIL_USER);
-  console.log('[EMAIL] To:', process.env.NOTIFY_EMAIL);
+  console.log('[EMAIL] 📧 Sending notification via Resend...');
+  console.log('[EMAIL] To:', process.env.NOTIFY_EMAIL || payload.user.email);
   
   try {
-    const transport = createTransport();
-    const mail = buildNotificationEmail(payload);
+    const emailData = buildNotificationEmail(payload);
     
-    const info = await transport.sendMail(mail);
+    const { data, error } = await resend.emails.send(emailData);
+    
+    if (error) {
+      throw new Error(error.message);
+    }
     
     console.log('[EMAIL] ✅ Notification sent successfully');
-    console.log('[EMAIL] Message ID:', info.messageId);
+    console.log('[EMAIL] Email ID:', data.id);
     
-    return info;
+    return data;
   } catch (error) {
     console.error('[EMAIL] ❌ Failed to send notification');
-    console.error('[EMAIL] Error code:', error.code);
-    console.error('[EMAIL] Error message:', error.message);
+    console.error('[EMAIL] Error:', error.message);
     
-    // Log specific Gmail errors
-    if (error.code === 'EAUTH') {
-      console.error('[EMAIL] 🔐 Authentication failed - check GMAIL_APP_PASSWORD');
-      console.error('[EMAIL] Make sure you created an App Password (not regular password)');
-      console.error('[EMAIL] https://myaccount.google.com/apppasswords');
-    } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNECTION') {
-      console.error('[EMAIL] 🌐 Connection timeout - Railway may be blocking SMTP');
-      console.error('[EMAIL] Try using a transactional email service like SendGrid or Resend');
+    // Log specific Resend errors
+    if (error.message.includes('API key')) {
+      console.error('[EMAIL] 🔐 Invalid API key - check RESEND_API_KEY');
+      console.error('[EMAIL] Get your key at: https://resend.com/api-keys');
     }
     
     throw error;
