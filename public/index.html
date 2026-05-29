@@ -2137,9 +2137,9 @@ else{
   const noticeOpen=addYears(termStart,-10),noticeClose=addYears(termEnd,-2);
   const missed=now>termEnd;
   let statusFlag,statusClass;
-  if(now<noticeOpen){statusFlag='Notice window not yet open';statusClass='flag-upcoming';}
-  else if(now<=noticeClose){statusFlag='Notice window currently open';statusClass='flag-open';}
-  else if(!missed){statusFlag='Notice window closing soon';statusClass='flag-upcoming';}
+  if(now<noticeOpen){statusFlag='Notice filing period not yet open';statusClass='flag-upcoming';}
+  else if(now<=noticeClose){statusFlag='Notice filing period open — you may serve notice now';statusClass='flag-open';}
+  else if(!missed){statusFlag='Notice filing period closing soon';statusClass='flag-upcoming';}
   else{statusFlag='Termination window passed';statusClass='flag-passed';}
   
   const isApprox = !grant || (!pub && grant);
@@ -2180,9 +2180,9 @@ function computeS304(s){
   const missed=now>termEnd;
   
   let statusFlag,statusClass;
-  if(now<noticeOpen){statusFlag='Notice window not yet open';statusClass='flag-upcoming';}
-  else if(now<=noticeClose){statusFlag='Notice window currently open';statusClass='flag-open';}
-  else if(!missed){statusFlag='Notice window closing soon';statusClass='flag-upcoming';}
+  if(now<noticeOpen){statusFlag='Notice filing period not yet open';statusClass='flag-upcoming';}
+  else if(now<=noticeClose){statusFlag='Notice filing period open — you may serve notice now';statusClass='flag-open';}
+  else if(!missed){statusFlag='Notice filing period closing soon';statusClass='flag-upcoming';}
   else{statusFlag='Termination window passed';statusClass='flag-passed';}
   
   const isApprox = !pub;
@@ -2245,7 +2245,8 @@ function renderResults(){
       ${badgeRow}
       <div class="result-song-title">${title}${t.isApprox?' <span style="font-size:11px;font-family:DM Mono,monospace;font-weight:400;color:var(--muted);">(dates approximate)</span>':''}</div>
       <div class="result-regime ${rc}">${rl}</div>
-      <div style="margin-bottom:12px;"><span class="status-flag ${t.statusClass}">${t.statusFlag}</span></div>
+      <div style="margin-bottom:6px;"><span class="status-flag ${t.statusClass}">${t.statusFlag}</span></div>
+      ${t.statusClass==='flag-open'?`<p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5;">You can <strong>file your notice now</strong>. The copyright itself does not revert until the termination window opens on <strong>${fmtDate(t.termStart)}</strong>.</p>`:''}
       <div class="dates-grid">
         <div class="date-item"><div class="date-label">Termination window opens</div><div class="date-value">${fmtDate(t.termStart)}</div></div>
         <div class="date-item"><div class="date-label">Termination window closes</div><div class="date-value">${fmtDate(t.termEnd)}</div></div>
@@ -2262,11 +2263,11 @@ function renderResults(){
   </p>
 ` : (t.statusClass === 'flag-open' ? `
   <p style="font-size:12px;margin-top:10px;color:var(--blue);">
-    The statutory termination window is currently open. You may still take action — continue to the next step.
+    You are in the <strong>notice-serving period</strong> — you can file your termination notice now. The copyright reverts on <strong>${fmtDate(t.termStart)}</strong> once the termination window opens.
   </p>
-` : (t.statusFlag === 'Notice window closing soon' ? `
+` : (t.statusFlag === 'Notice filing period closing soon' ? `
   <p style="font-size:12px;margin-top:10px;color:var(--amber);">
-    The statutory termination window is currently open but closing soon. Immediate action is recommended — continue to the next step.
+    Your notice-filing window is <strong>closing soon</strong>. You must serve your termination notice before <strong>${fmtDate(t.noticeClose)}</strong>. Immediate action is recommended.
   </p>
 ` : `
   <p style="font-size:12px;margin-top:10px;color:var(--green);">
@@ -2452,4 +2453,3 @@ updateProgress();
 </script>
 </body>
 </html>
-

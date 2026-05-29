@@ -63,13 +63,22 @@ Grant Date: ${d.grantDate || 'Unknown'}
 Applicable Section: ${d.applicableSection || 'Under review'}
 Status: ${d.statusFlag || 'Calculating'}
 Window Missed: ${d.windowMissed || 'No'}
+Notice Filing Period: ${d.noticeWindowStart || 'Unknown'} to ${d.noticeWindowEnd || 'Unknown'}
+Termination Window (when copyright reverts): ${d.terminationWindowStart || 'Unknown'} to ${d.terminationWindowEnd || 'Unknown'}
+
+CRITICAL DISTINCTION — YOU MUST FOLLOW THIS:
+- The NOTICE FILING PERIOD is when the songwriter can SERVE their termination notice (a legal document).
+- The TERMINATION WINDOW is when the copyright actually REVERTS back to the songwriter.
+- These are DIFFERENT dates. NEVER say 'the window is open' without specifying which one.
+- If status includes 'open', say: the songwriter can FILE THEIR NOTICE now, but the copyright does not revert until the termination window opens.
 
 Write EXACTLY 3 sentences:
-1. Current eligibility status
-2. When they can or could have taken action
-3. What the next step is
+1. Whether they can file their notice now (yes/no) and why
+2. When the copyright will actually revert (give the termination window start date), and the notice filing deadline
+3. What the concrete next step is
 
-Keep it simple, direct, and encouraging. No legal jargon.`;
+Keep it simple, direct, and encouraging. No legal jargon.
+NEVER say 'the window is open' — say 'notice filing period is open' or 'you can serve your notice now'.`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
