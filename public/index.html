@@ -259,8 +259,8 @@ h2.page-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:
 .btn-remove:hover{color:var(--red);}
 .sc-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;margin-top:4px;}
 .divider{border:none;border-top:1px solid #f0ece4;margin:16px 0;}
-.btn-add-song{display:flex;align-items:center;gap:8px;padding:11px 18px;border:1.5px dashed var(--border);border-radius:8px;background:none;cursor:pointer;font-size:13px;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .2s;width:100%;margin-bottom:8px;}
-.btn-add-song:hover{border-color:var(--gold-dark);color:var(--ink);background:#fff;}
+.btn-add-song{display:flex;align-items:center;gap:8px;padding:12px 20px;border:none;border-radius:8px;background:var(--dark);color:var(--parchment);cursor:pointer;font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;transition:all .2s;width:100%;margin-bottom:8px;justify-content:center;}
+.btn-add-song:hover{background:#2c2c28;transform:translateY(-1px);}
 
 /* BUTTONS */
 .btn-row{display:flex;gap:12px;justify-content:flex-end;margin-top:24px;}
@@ -1448,6 +1448,49 @@ let songs = [];
 let computedResults = [];
 let selectedFinalChoice = '';
 let lastStepBeforeFinal = 5;
+let userState = {};
+
+function saveUserState() {
+  userState = {
+    userName:         document.getElementById('userName')?.value || '',
+    userStageName:    document.getElementById('userStageName')?.value || '',
+    userEmail:        document.getElementById('userEmail')?.value || '',
+    userEmailConfirm: document.getElementById('userEmailConfirm')?.value || '',
+    userPhone:        document.getElementById('userPhone')?.value || '',
+    userContact:      document.getElementById('userContact')?.value || '',
+    userCountry:      document.getElementById('userCountry')?.value || '',
+    userPro:          document.getElementById('userPro')?.value || '',
+    userIPI:          document.getElementById('userIPI')?.value || '',
+    userProID:        document.getElementById('userProID')?.value || '',
+    termsChecked:     document.getElementById('termsCheck')?.checked || false,
+    consentChecked:   document.getElementById('consentCheck')?.checked || false,
+    marketingChecked: document.getElementById('marketingCheck')?.checked || false,
+  };
+}
+
+function restoreUserState() {
+  if (!userState.userEmail) return;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  set('userName', userState.userName);
+  set('userStageName', userState.userStageName);
+  set('userEmail', userState.userEmail);
+  set('userEmailConfirm', userState.userEmailConfirm);
+  set('userPhone', userState.userPhone);
+  set('userContact', userState.userContact);
+  set('userCountry', userState.userCountry);
+  set('userPro', userState.userPro);
+  set('userIPI', userState.userIPI);
+  set('userProID', userState.userProID);
+  const cb = (id, val) => { const el = document.getElementById(id); if (el) el.checked = val; };
+  cb('termsCheck', userState.termsChecked);
+  cb('consentCheck', userState.consentChecked);
+  cb('marketingCheck', userState.marketingChecked);
+  if (userState.termsChecked) {
+    const hint = document.getElementById('termsReadHint');
+    if (hint) hint.style.display = 'none';
+  }
+  onCountryChange();
+}
 
 const DISPOSABLE = ['mailinator.com','guerrillamail.com','tempmail.com','throwaway.email','yopmail.com','sharklasers.com','grr.la','guerrillamail.info','spam4.me','10minutemail.com','trashmail.com','dispostable.com','maildrop.cc','mailnull.com','spamgourmet.com','fakeinbox.com','discard.email','spamfree24.org','mytempemail.com','tempinbox.com','getairmail.com','filzmail.com','throwam.com','tempr.email','getnada.com','trashmail.at','trashmail.io','mailnesia.com','mintemail.com','burnermail.io','emailondeck.com','inboxalias.com','guerrillamailblock.com','spamherr.com','spamfree.eu','tempail.com'];
 
@@ -1602,6 +1645,8 @@ function updateProgress() {
   initDots();
 }
 function goTo(n) {
+  if (currentStep === 2) saveUserState();
+
   document.getElementById('step'+currentStep).classList.remove('active');
   
   // 🔴 RESET ANIMATION when leaving Step 4
@@ -1613,6 +1658,8 @@ function goTo(n) {
   document.getElementById('step'+currentStep).classList.add('active');
   updateProgress();
   
+  if (n === 2) setTimeout(restoreUserState, 0);
+
   // 🔴 ULTIMATE FIX: Force body background change
   if (n === 4) {
     document.body.classList.add('processing-active');
@@ -1733,6 +1780,7 @@ function addSong() {
     grantByAuthor:'', workForHire:'',
     publisherName:'', proMembership:'', hasAgreement:'',
     uscoNumber:'', iswcNumber:'', rightsType:'', priorTermination:'',
+    artistName:'', recordLabel:'',
     cowriters:[]
   });
   renderSongs();
@@ -1761,9 +1809,8 @@ function renderSongs() {
         <input type="text" id="songtitle_${s.id}" value="${s.title}" onchange="updateSong(${s.id},'title',this.value)" placeholder="Exactly as it appears on the original contract"/>
       </div>
  
-      <div class="field-row">
-        <div class="field">
-          <label>USCO Registration Number <span class="opt">optional but recommended</span></label>
+      <div class="field">
+          <label>Copyright Registration Number <span class="opt">optional but recommended</span></label>
           <div class="lookup-row">
             <input type="text" id="usco_${s.id}" value="${s.uscoNumber}" onchange="updateSong(${s.id},'uscoNumber',this.value)" placeholder="e.g. PAu 3-000-000"/>
             <button class="btn-lookup" id="btn_usco_${s.id}" onclick="lookupSong(${s.id},'usco')">Look up →</button>
@@ -1771,12 +1818,6 @@ function renderSongs() {
           <div class="helper">From copyright.gov/public-records — we'll auto-fill dates if found</div>
           <div class="lookup-result" id="lr_usco_${s.id}"></div>
         </div>
-        <div class="field">
-          <label>ISWC Number <span class="opt">optional</span></label>
-          <input type="text" id="iswc_${s.id}" value="${s.iswcNumber}" onchange="updateSong(${s.id},'iswcNumber',this.value)" placeholder="e.g. T-000.000.000-0"/>
-          <div class="helper">International Standard Musical Work Code — from your PRO</div>
-        </div>
-      </div>
  
       <div class="field">
         <label>Don't have a registration number? <span class="opt">search by title</span></label>
@@ -1805,6 +1846,19 @@ function renderSongs() {
         </div>
       </div>
  
+      <div class="field-row">
+        <div class="field">
+          <label>Artist name <span class="opt">optional</span></label>
+          <input type="text" id="artist_${s.id}" value="${s.artistName||''}" onchange="updateSong(${s.id},'artistName',this.value)" placeholder="e.g. Cher, Whitney Houston"/>
+          <div class="helper">The performing artist who recorded this song</div>
+        </div>
+        <div class="field">
+          <label>Record label <span class="opt">optional</span></label>
+          <input type="text" id="label_${s.id}" value="${s.recordLabel||''}" onchange="updateSong(${s.id},'recordLabel',this.value)" placeholder="e.g. Sony Music, Warner Records"/>
+          <div class="helper">The label that released the recording</div>
+        </div>
+      </div>
+
       <div class="divider"></div>
       <div class="sc-label">Key dates</div>
  
@@ -1826,15 +1880,7 @@ function renderSongs() {
           <input type="date" id="copyrightdate_${s.id}" value="${s.copyrightDate}" onchange="updateSong(${s.id},'copyrightDate',this.value)"/>
           <div class="helper">Date on your USCO registration certificate — different from your publishing contract date above.</div>
         </div>
-        <div class="field">
-          <label>Has a termination notice been served? <span class="opt">optional</span></label>
-          <select onchange="updateSong(${s.id},'priorTermination',this.value)">
-            <option value="" ${!s.priorTermination?'selected':''}>Select one</option>
-            <option value="no" ${s.priorTermination==='no'?'selected':''}>No</option>
-            <option value="yes" ${s.priorTermination==='yes'?'selected':''}>Yes — already served</option>
-            <option value="unsure" ${s.priorTermination==='unsure'?'selected':''}>Unsure</option>
-          </select>
-        </div>
+
       </div>
  
       <div class="divider"></div>
@@ -2235,11 +2281,23 @@ function renderResults(){
     const badgeRow = badges ? `<div style="margin-bottom:10px;">${badges}</div>` : '';
 
     if(r.routing==='ineligible'||r.routing==='needs-review'){
+      const t=r.timing;
+      const datesBlock = t ? `
+        <div class="dates-grid" style="margin-top:12px;">
+          <div class="date-item"><div class="date-label">Termination window opens</div><div class="date-value">${fmtDate(t.termStart)}</div></div>
+          <div class="date-item"><div class="date-label">Termination window closes</div><div class="date-value">${fmtDate(t.termEnd)}</div></div>
+          <div class="date-item"><div class="date-label">Earliest notice date</div><div class="date-value">${fmtDate(t.noticeOpen)}</div></div>
+          <div class="date-item"><div class="date-label">Latest notice date</div><div class="date-value">${fmtDate(t.noticeClose)}</div></div>
+        </div>` : '';
       return`<div class="result-card needs-review">
         ${badgeRow}
         <div class="result-song-title">${title}</div>
         <div class="result-regime needs-review">${r.routing==='ineligible'?'⊘ Not eligible — work made for hire':'⚠ Needs professional review'}</div>
-        <p style="font-size:13px;color:var(--amber);">${r.reason}</p>
+        <p style="font-size:13px;color:var(--amber);margin-bottom:10px;">${r.reason}</p>
+        ${datesBlock}
+        <div style="margin-top:12px;padding:10px 14px;background:#fff7ed;border:1px solid #fbbf24;border-radius:7px;font-size:12px;color:#b45309;line-height:1.5;">
+          💡 <strong>Note:</strong> Even songs that are ineligible for statutory termination may have commercial value — including works made for hire. Royalty monetization, licensing, and catalog sales may still be available options. Continue to explore what's possible.
+        </div>
       </div>`;
     }
     const t=r.timing;
@@ -2389,6 +2447,8 @@ async function submitForm(){
       iswcNumber:s.iswcNumber,
       rightsType:s.rightsType,
       priorTermination:s.priorTermination,
+      artistName:s.artistName||'',
+      recordLabel:s.recordLabel||'',
       cowriters:s.cowriters,
       result:s.result?{
         routing:s.result.routing,
@@ -2463,5 +2523,3 @@ updateProgress();
 </script>
 </body>
 </html>
-
-<!-- ds -->
