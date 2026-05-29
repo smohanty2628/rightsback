@@ -122,19 +122,31 @@ Return JSON only:
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 800,
+      max_tokens: 1200,
       messages: [{ role: 'user', content: prompt }],
     });
 
     let text = message.content[0].text.trim();
 
+    // Strip markdown code fences if present
     if (text.includes('```json')) {
       text = text.split('```json')[1].split('```')[0].trim();
     } else if (text.includes('```')) {
       text = text.split('```')[1].split('```')[0].trim();
     }
 
-    return JSON.parse(text);
+    // Extract just the JSON object in case of any surrounding text
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) text = jsonMatch[0];
+
+    const parsed = JSON.parse(text);
+
+    // Validate required fields, fallback if malformed
+    if (typeof parsed.hasRedFlags !== 'boolean') {
+      throw new Error('Invalid JSON shape from red flag detector');
+    }
+
+    return parsed;
   } catch (error) {
     console.error('Red Flag Detector error:', error.message);
     return {
@@ -245,43 +257,10 @@ function scoreSubmissionQuality(submissionData) {
 }
 
 async function generateTerminationNotice(submissionData) {
-  const d = normalizeSubmission(submissionData);
-
-  try {
-    const section = d.applicableSection.includes('203') ? '§203' : '§304';
-    const sectionFull = section === '§203'
-      ? '17 U.S.C. § 203'
-      : '17 U.S.C. § 304(c) or § 304(d)';
-
-    const prompt = `You are a copyright attorney. Draft a termination notice letter under ${sectionFull}.
-
-SONG DETAILS:
-Title: "${d.songTitle}"
-Songwriter: ${d.songwriterName}
-Grant Date: ${d.grantDate || '[GRANT DATE]'}
-Composition / Release Date: ${d.compositionDate || '[COMPOSITION OR RELEASE DATE]'}
-Publisher: ${d.publisherName || '[PUBLISHER NAME]'}
-Applicable Section: ${section}
-Termination Window: ${d.terminationWindowStart || '[START DATE]'} to ${d.terminationWindowEnd || '[END DATE]'}
-Notice Window: ${d.noticeWindowStart || '[NOTICE START]'} to ${d.noticeWindowEnd || '[NOTICE END]'}
-
-USER DETAILS:
-Name: ${d.userName || d.songwriterName}
-Email: ${d.userEmail || '[EMAIL]'}
-
-Draft a formal termination notice letter. Use [BRACKETS] for missing details. Keep it concise and professional.`;
-
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    return message.content[0].text.trim();
-  } catch (error) {
-    console.error('Notice Generator error:', error.message);
-    return 'Notice generation unavailable. Please consult with a copyright attorney to draft your termination notice.';
-  }
+  // Notice display removed from results page per Herb feedback:
+  // results page should be informational only, not a filing tool.
+  // Stub preserved here — no API call made, saves tokens on every submission.
+  return null;
 }
 
 async function generateHeirGuidance(submissionData) {
