@@ -1812,7 +1812,7 @@ function renderSongs() {
         <div class="field">
           <label>When did you sign the publishing deal? <span class="opt">optional</span></label>
           <input type="date" id="grantdate_${s.id}" value="${s.grantDate}" onchange="updateSong(${s.id},'grantDate',this.value)"/>
-          <div class="helper">Date you signed the original publishing or assignment contract</div>
+          <div class="helper">Date you signed the publishing contract — <strong>not</strong> the USCO registration date. Check your original agreement.</div>
         </div>
         <div class="field">
           <label>When was the song first released? <span class="opt">optional</span></label>
@@ -1824,7 +1824,7 @@ function renderSongs() {
         <div class="field">
           <label>Copyright registration date <span class="opt">optional</span></label>
           <input type="date" id="copyrightdate_${s.id}" value="${s.copyrightDate}" onchange="updateSong(${s.id},'copyrightDate',this.value)"/>
-          <div class="helper">Date on your USCO registration certificate</div>
+          <div class="helper">Date on your USCO registration certificate — different from your publishing contract date above.</div>
         </div>
         <div class="field">
           <label>Has a termination notice been served? <span class="opt">optional</span></label>
@@ -2079,6 +2079,11 @@ function handleLookupResult(songId, data, type, resultDiv) {
     <div style="margin-top:8px;padding-top:8px;border-top:1px solid #d1fae5;">
       <div style="color:var(--green);font-size:11px;font-weight:500;margin-bottom:3px;">Match Confidence: ${d.confidence || 'MEDIUM'}</div>
       <div style="color:var(--muted);font-size:11px;">Sources: ${(d.sources||['Database']).join(', ')} · Please verify before submitting</div>
+    </div>
+    <div style="margin-top:10px;padding:9px 12px;background:#fffbeb;border:1px solid #fbbf24;border-radius:6px;font-size:12px;color:#b45309;line-height:1.5;">
+      ⚠ The <strong>Copyright Registration Date</strong> above has been auto-filled from USCO records.
+      This is <strong>not</strong> the same as your publishing contract (grant) date.
+      Please enter your actual contract date in the <strong>"When did you sign the publishing deal?"</strong> field above.
     </div>`;
  
   renderSongs();
@@ -2243,7 +2248,7 @@ function renderResults(){
     const rl=r.routing==='203'?'§ 203 — Post-1978 Grant':('§ 304 — Pre-1978 Grant — '+t.subsection);
     return`<div class="result-card ${cc}">
       ${badgeRow}
-      <div class="result-song-title">${title}${t.isApprox?' <span style="font-size:11px;font-family:DM Mono,monospace;font-weight:400;color:var(--muted);">(dates approximate)</span>':''}</div>
+      <div class="result-song-title">${title}${t.isApprox?' <span style="font-size:11px;font-family:DM Mono,monospace;font-weight:400;color:var(--amber);">(dates estimated — add contract date for accuracy)</span>':''}</div>
       <div class="result-regime ${rc}">${rl}</div>
       <div style="margin-bottom:6px;"><span class="status-flag ${t.statusClass}">${t.statusFlag}</span></div>
       ${t.statusClass==='flag-open'?`<p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5;">You can <strong>file your notice now</strong>. The copyright itself does not revert until the termination window opens on <strong>${fmtDate(t.termStart)}</strong>.</p>`:''}
@@ -2257,6 +2262,11 @@ function renderResults(){
         <div class="date-label" style="margin-bottom:3px;">Recordation deadline (Copyright Office)</div>
         <div class="date-value">${fmtDate(t.recordationDeadline)}</div>
       </div>
+      ${t.isApprox ? `
+      <div style="margin-top:10px;padding:10px 14px;background:#fffbeb;border:1px solid #fbbf24;border-radius:7px;font-size:12px;color:#b45309;line-height:1.5;">
+        ⚠ <strong>Dates are estimated</strong> — calculated from your release date because no publishing contract date was entered.
+        For greater accuracy, enter the date you signed your publishing deal in the <strong>"When did you sign the publishing deal?"</strong> field and re-analyze.
+      </div>` : ''}
    ${t.missed ? `
   <p style="font-size:12px;margin-top:10px;color:var(--red);">
     The statutory termination window appears to have passed. Monetization options may still be available — continue to the next step.
