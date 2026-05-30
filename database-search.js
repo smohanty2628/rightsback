@@ -1,8 +1,12 @@
 // ============================================
-// CLEANED DATABASE-SEARCH.JS
+// DATABASE-SEARCH.JS
 // ✅ USCO only (registration dates, authors)
 // ✅ Wikipedia API (release dates)
-// ❌ ASCAP REMOVED (not needed)
+// ✅ FIX 1: Index limit raised 1M → 4M records
+// ✅ FIX 2: Always picks OLDEST reg_date
+// ✅ FIX 3: LOW confidence results rejected
+// ✅ FIX 4: Title search groups by title,
+//           picks oldest across all matches
 // ============================================
 
 const fs = require('fs');
@@ -11,21 +15,19 @@ const readline = require('readline');
 const axios = require('axios');
 const zlib = require('zlib');
 
-const USCO_PATH = path.join(__dirname, 'data', 'usco', 'reg_musical_work.csv');
+const USCO_PATH    = path.join(__dirname, 'data', 'usco', 'reg_musical_work.csv');
 const USCO_PATH_GZ = USCO_PATH + '.gz';
 
-let uscoIndex = null;
+let uscoIndex     = null;
 let uscoIndexBuilt = false;
-const isBuilding = { usco: false };
+const isBuilding  = { usco: false };
 
 // ============================================
-// UTILITY FUNCTIONS
+// UTILITY
 // ============================================
 function normalize(str) {
   if (!str) return '';
-  return str
-    .toString()
-    .toLowerCase()
+  return str.toString().toLowerCase()
     .replace(/[^\w\s]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -39,6 +41,9 @@ function getLastName(fullName) {
 
 // ============================================
 // BUILD USCO INDEX
+// ✅ FIX 1: Limit raised from 1M to 4M lines
+// ✅ FIX 2: Index keyed by TITLE for dedup,
+//           always stores OLDEST reg_date per title
 // ============================================
 async function buildUSCOIndex() {
   if (uscoIndexBuilt && uscoIndex) {
@@ -54,44 +59,43 @@ async function buildUSCOIndex() {
     return uscoIndex;
   }
 
-  // Check for gzipped file first, then uncompressed
-let filePath = null;
-let isGzipped = false;
+  let filePath  = null;
+  let isGzipped = false;
 
-if (fs.existsSync(USCO_PATH_GZ)) {
-  filePath = USCO_PATH_GZ;
-  isGzipped = true;
-  console.log('[USCO INDEX] Found gzipped file:', USCO_PATH_GZ);
-} else if (fs.existsSync(USCO_PATH)) {
-  filePath = USCO_PATH;
-  isGzipped = false;
-  console.log('[USCO INDEX] Found uncompressed file:', USCO_PATH);
-} else {
-  throw new Error(`USCO file not found at ${USCO_PATH} or ${USCO_PATH_GZ}`);
-}
+  if (fs.existsSync(USCO_PATH_GZ)) {
+    filePath  = USCO_PATH_GZ;
+    isGzipped = true;
+    console.log('[USCO INDEX] Found gzipped file:', USCO_PATH_GZ);
+  } else if (fs.existsSync(USCO_PATH)) {
+    filePath  = USCO_PATH;
+    isGzipped = false;
+    console.log('[USCO INDEX] Found uncompressed file:', USCO_PATH);
+  } else {
+    throw new Error(`USCO file not found at ${USCO_PATH} or ${USCO_PATH_GZ}`);
+  }
 
   isBuilding.usco = true;
   console.log('[USCO INDEX] 🔨 Building from CSV...');
   const startTime = Date.now();
 
-  uscoIndex = new Map();
+  // Two maps:
+  // regIndex  — keyed by reg_num (for direct number lookups)
+  // titleIndex — keyed by normalised title (for title search, oldest per title)
+  const regIndex   = new Map();
+  const titleIndex = new Map();
+
   let lineCount = 0;
 
-  // Create read stream (with or without gunzip)
-let fileStream;
-if (isGzipped) {
-  fileStream = fs.createReadStream(filePath)
-    .pipe(zlib.createGunzip())
-    .setEncoding('utf8');
-} else {
-  fileStream = fs.createReadStream(filePath, { encoding: 'utf8' });
-}
+  const fileStream = isGzipped
+    ? fs.createReadStream(filePath).pipe(zlib.createGunzip()).setEncoding('utf8')
+    : fs.createReadStream(filePath, { encoding: 'utf8' });
+
   const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
 
   let headers = [];
   for await (const line of rl) {
     lineCount++;
-    
+
     if (lineCount === 1) {
       headers = line.split(',').map(h => h.trim());
       console.log('[USCO INDEX] Found columns:', headers.slice(0, 10).join(', '), '...');
@@ -102,16 +106,17 @@ if (isGzipped) {
       console.log(`[USCO INDEX] 📊 Processed ${lineCount.toLocaleString()} lines...`);
     }
 
-    if (lineCount > 1000000) {
+    // ✅ FIX 1: Raised from 1,000,000 to 4,000,000
+    if (lineCount > 6000000) {
       console.log('[USCO INDEX] Reached 4M line limit');
       break;
     }
 
     try {
       const values = [];
-      let current = '';
+      let current  = '';
       let inQuotes = false;
-      
+
       for (let i = 0; i < line.length; i++) {
         const char = line[i];
         if (char === '"') {
@@ -126,46 +131,56 @@ if (isGzipped) {
       values.push(current.trim());
 
       const row = {};
-      headers.forEach((header, idx) => {
-        row[header] = values[idx] || '';
-      });
+      headers.forEach((header, idx) => { row[header] = values[idx] || ''; });
 
       const regNumber = row['reg_num']?.trim();
       if (!regNumber) continue;
 
-      const title = row['title'] || '';
+      const title            = row['title'] || '';
       const registrationDate = row['reg_date'] || '';
 
       const authors = [];
       for (let i = 1; i <= 10; i++) {
-        const authorName = row[`author_${i}_name`]?.trim();
-        if (authorName) {
-          authors.push(authorName);
-        }
+        const a = row[`author_${i}_name`]?.trim();
+        if (a) authors.push(a);
       }
-
       for (let i = 1; i <= 10; i++) {
-        const claimantName = row[`claimant_${i}_name`]?.trim();
-        if (claimantName && !authors.includes(claimantName)) {
-          authors.push(claimantName);
+        const c = row[`claimant_${i}_name`]?.trim();
+        if (c && !authors.includes(c)) authors.push(c);
+      }
+
+      const record = { registrationNumber: regNumber, title, registrationDate, authors };
+
+      // Always store in regIndex (keyed by reg_num)
+      regIndex.set(regNumber, record);
+
+      // ✅ FIX 2: titleIndex keeps OLDEST reg_date per normalised title
+      const titleKey = normalize(title);
+      if (titleKey) {
+        const existing = titleIndex.get(titleKey);
+        if (!existing) {
+          titleIndex.set(titleKey, record);
+        } else {
+          // Keep whichever has the OLDER registration date
+          const existingDate = new Date(existing.registrationDate || '9999-12-31');
+          const newDate      = new Date(registrationDate          || '9999-12-31');
+          if (newDate < existingDate) {
+            titleIndex.set(titleKey, record);
+          }
         }
       }
 
-      uscoIndex.set(regNumber, {
-        registrationNumber: regNumber,
-        title: title,
-        registrationDate: registrationDate,
-        authors: authors
-      });
-    } catch (error) {
-      // Skip malformed lines
+    } catch (_) {
+      // Skip malformed lines silently
     }
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-  console.log(`[USCO INDEX] ✅ Built: ${uscoIndex.size.toLocaleString()} records in ${elapsed}s`);
+  console.log(`[USCO INDEX] ✅ Built: ${regIndex.size.toLocaleString()} records in ${elapsed}s`);
   console.log(`[USCO INDEX] 🚀 All future searches instant (<100ms)!`);
 
+  // Expose both maps on the returned object
+  uscoIndex = { regIndex, titleIndex };
   uscoIndexBuilt = true;
   isBuilding.usco = false;
   return uscoIndex;
@@ -176,27 +191,22 @@ if (isGzipped) {
 // ============================================
 async function lookupUSCOByNumber(registrationNumber) {
   try {
-    const index = await buildUSCOIndex();
-    const record = index.get(registrationNumber.trim());
+    const { regIndex } = await buildUSCOIndex();
+    const record = regIndex.get(registrationNumber.trim());
 
     if (!record) {
-      return { 
-        ok: false, 
-        found: false,
-        error: 'Record not found in USCO database' 
-      };
+      return { ok: false, found: false, error: 'Record not found in USCO database' };
     }
 
     return {
-      ok: true,
-      found: true,
+      ok: true, found: true,
       data: {
-        title: record.title,
+        title:              record.title,
         registrationNumber: record.registrationNumber,
-        registrationDate: record.registrationDate,
-        authors: record.authors,
-        source: 'USCO Database',
-        confidence: 'HIGH'
+        registrationDate:   record.registrationDate,
+        authors:            record.authors,
+        source:             'USCO Database',
+        confidence:         'HIGH'
       }
     };
 
@@ -207,81 +217,78 @@ async function lookupUSCOByNumber(registrationNumber) {
 }
 
 // ============================================
-// USCO LOOKUP BY TITLE (PRIORITIZES OLDEST DATE)
+// USCO LOOKUP BY TITLE
+// ✅ FIX 2: titleIndex already stores oldest per title
+// ✅ FIX 3: LOW confidence → not returned
 // ============================================
 async function lookupUSCOByTitle(songTitle, songwriterName = '') {
   console.log('[USCO] 🔍 Title:', songTitle);
   const startTime = Date.now();
 
   try {
-    const index = await buildUSCOIndex();
-    const searchTitle = normalize(songTitle);
+    const { titleIndex } = await buildUSCOIndex();
+    const searchTitle    = normalize(songTitle);
     const searchLastName = getLastName(songwriterName);
 
-    let allHighMatches = [];
-    let bestMatch = null;
-    let bestScore = 0;
+    // Exact title hit from pre-built oldest index
+    const exactRecord = titleIndex.get(searchTitle);
 
-    for (const [regNumber, record] of index) {
-      const titleNorm = normalize(record.title);
-      
-      const titleExact = titleNorm === searchTitle;
-      const titleContains = titleNorm.includes(searchTitle) || searchTitle.includes(titleNorm);
-      
-      if (!titleExact && !titleContains) continue;
+    if (exactRecord) {
+      let songwriterMatch = !searchLastName;
+      if (searchLastName && exactRecord.authors.length > 0) {
+        songwriterMatch = exactRecord.authors.some(
+          a => getLastName(a) === searchLastName
+        );
+      }
+
+      const confidence = songwriterMatch ? 'HIGH' : 'MEDIUM';
+      const elapsed    = Date.now() - startTime;
+      console.log(`[USCO] ✅ Exact title match (${confidence}) in ${elapsed}ms:`,
+        exactRecord.title, exactRecord.registrationDate);
+
+      return { found: true, source: 'USCO Database', confidence, ...exactRecord };
+    }
+
+    // Partial title search — scan titleIndex for contains match
+    // ✅ FIX 3: Only return MEDIUM or HIGH — skip LOW
+    let bestRecord    = null;
+    let bestScore     = 0;
+    let bestConfidence = null;
+
+    for (const [titleKey, record] of titleIndex) {
+      const titleContains =
+        titleKey.includes(searchTitle) || searchTitle.includes(titleKey);
+      if (!titleContains) continue;
 
       let songwriterMatch = !searchLastName;
       if (searchLastName && record.authors.length > 0) {
-        songwriterMatch = record.authors.some(author => {
-          const authorLast = getLastName(author);
-          return authorLast === searchLastName;
-        });
+        songwriterMatch = record.authors.some(
+          a => getLastName(a) === searchLastName
+        );
       }
 
-      let confidence = 'LOW';
-      if (titleExact && songwriterMatch) confidence = 'HIGH';
-      else if (titleExact || songwriterMatch) confidence = 'MEDIUM';
+      // Skip if no songwriter match at all when name was provided
+      if (searchLastName && !songwriterMatch) continue;
 
-      const score = (titleExact ? 100 : 50) + (songwriterMatch ? 50 : 0);
+      const score = (searchTitle === titleKey ? 100 : 50) + (songwriterMatch ? 50 : 0);
+      const confidence = songwriterMatch ? 'MEDIUM' : 'LOW';
 
-      if (confidence === 'HIGH') {
-        allHighMatches.push({ ...record, confidence, score });
-      }
+      // ✅ FIX 3: Never return LOW confidence
+      if (confidence === 'LOW') continue;
 
       if (score > bestScore) {
-        bestScore = score;
-        bestMatch = { ...record, confidence };
+        bestScore      = score;
+        bestRecord     = record;
+        bestConfidence = confidence;
       }
-    }
-
-    // Pick OLDEST if multiple HIGH confidence matches
-    if (allHighMatches.length > 0) {
-      console.log(`[USCO] Comparing ${allHighMatches.length} HIGH matches...`);
-      
-      bestMatch = allHighMatches.reduce((oldest, current) => {
-        const oldestDate = new Date(oldest.registrationDate || '9999-12-31');
-        const currentDate = new Date(current.registrationDate || '9999-12-31');
-        return currentDate < oldestDate ? current : oldest;
-      });
-      
-      const elapsed = Date.now() - startTime;
-      console.log(`[USCO] ✅ HIGH match (oldest) in ${elapsed}ms:`, bestMatch.title, bestMatch.registrationDate);
-      return {
-        found: true,
-        source: 'USCO Database',
-        ...bestMatch
-      };
     }
 
     const elapsed = Date.now() - startTime;
 
-    if (bestMatch) {
-      console.log(`[USCO] ✅ Match (${bestMatch.confidence}) in ${elapsed}ms:`, bestMatch.title);
-      return {
-        found: true,
-        source: 'USCO Database',
-        ...bestMatch
-      };
+    if (bestRecord) {
+      console.log(`[USCO] ✅ Partial match (${bestConfidence}) in ${elapsed}ms:`,
+        bestRecord.title, bestRecord.registrationDate);
+      return { found: true, source: 'USCO Database', confidence: bestConfidence, ...bestRecord };
     }
 
     console.log(`[USCO] ❌ No match in ${elapsed}ms`);
@@ -302,20 +309,17 @@ async function getWikipediaReleaseDate(songTitle, songwriterName = '', retries =
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const searchQuery = songwriterName 
-        ? `${songTitle} ${songwriterName} song` 
+      const searchQuery = songwriterName
+        ? `${songTitle} ${songwriterName} song`
         : `${songTitle} song`;
-      
-      const searchUrl = 'https://en.wikipedia.org/w/api.php';
+
+      const searchUrl    = 'https://en.wikipedia.org/w/api.php';
       const searchParams = {
-        action: 'query',
-        list: 'search',
-        srsearch: searchQuery,
-        format: 'json',
-        srlimit: 3
+        action: 'query', list: 'search', srsearch: searchQuery,
+        format: 'json', srlimit: 3
       };
 
-      const searchResponse = await axios.get(searchUrl, { 
+      const searchResponse = await axios.get(searchUrl, {
         params: searchParams,
         headers: { 'User-Agent': 'RightsBack/1.0 (Music Copyright Tool)' },
         timeout: 20000
@@ -328,62 +332,49 @@ async function getWikipediaReleaseDate(songTitle, songwriterName = '', retries =
       }
 
       const pageTitle = searchResults[0].title;
-      
-      const contentUrl = 'https://en.wikipedia.org/w/api.php';
+
       const contentParams = {
-        action: 'query',
-        titles: pageTitle,
-        prop: 'revisions',
-        rvprop: 'content',
-        format: 'json',
-        rvslots: 'main'
+        action: 'query', titles: pageTitle,
+        prop: 'revisions', rvprop: 'content',
+        format: 'json', rvslots: 'main'
       };
 
-      const contentResponse = await axios.get(contentUrl, { 
+      const contentResponse = await axios.get(searchUrl, {
         params: contentParams,
         headers: { 'User-Agent': 'RightsBack/1.0 (Music Copyright Tool)' },
         timeout: 20000
       });
 
-      const pages = contentResponse.data?.query?.pages || {};
-      const pageId = Object.keys(pages)[0];
+      const pages   = contentResponse.data?.query?.pages || {};
+      const pageId  = Object.keys(pages)[0];
       const content = pages[pageId]?.revisions?.[0]?.slots?.main?.['*'] || '';
 
-      let dateStr = null;
-      
       // Format 1: {{Start date|1987|10|12}}
       let match = content.match(/\{\{Start date\|(\d{4})\|(\d{1,2})\|(\d{1,2})/i);
       if (match) {
-        const [_, year, month, day] = match;
-        const paddedMonth = month.padStart(2, '0');
-        const paddedDay = day.padStart(2, '0');
-        dateStr = `${year}-${paddedMonth}-${paddedDay}`;
+        const dateStr = `${match[1]}-${match[2].padStart(2,'0')}-${match[3].padStart(2,'0')}`;
         console.log(`[WIKIPEDIA] ✅ Found (format 1) in ${Date.now() - startTime}ms:`, dateStr);
         return { found: true, releaseDate: dateStr, source: 'Wikipedia' };
       }
-      
-      // Format 2: Plain date "October 12, 1987"
+
+      // Format 2: | Released = October 12, 1987
       match = content.match(/\|\s*[Rr]eleased\s*=\s*([A-Z][a-z]+\s+\d{1,2},\s*\d{4})/);
       if (match) {
-        dateStr = match[1].trim();
         try {
-          const parsedDate = new Date(dateStr);
-          if (!isNaN(parsedDate)) {
-            const year = parsedDate.getFullYear();
-            const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
-            const day = String(parsedDate.getDate()).padStart(2, '0');
-            dateStr = `${year}-${month}-${day}`;
+          const d = new Date(match[1].trim());
+          if (!isNaN(d)) {
+            const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            console.log(`[WIKIPEDIA] ✅ Found (format 2) in ${Date.now() - startTime}ms:`, dateStr);
+            return { found: true, releaseDate: dateStr, source: 'Wikipedia' };
           }
-        } catch (e) {}
-        console.log(`[WIKIPEDIA] ✅ Found (format 2) in ${Date.now() - startTime}ms:`, dateStr);
-        return { found: true, releaseDate: dateStr, source: 'Wikipedia' };
+        } catch (_) {}
       }
-      
-      // Format 3: Year only
+
+      // Format 3: year only
       match = content.match(/\|\s*[Rr]eleased\s*=\s*(\d{4})/);
       if (match) {
-        dateStr = `${match[1]}-01-01`;
-        console.log(`[WIKIPEDIA] ✅ Found (format 3 - year) in ${Date.now() - startTime}ms:`, dateStr);
+        const dateStr = `${match[1]}-01-01`;
+        console.log(`[WIKIPEDIA] ✅ Found (format 3) in ${Date.now() - startTime}ms:`, dateStr);
         return { found: true, releaseDate: dateStr, source: 'Wikipedia' };
       }
 
@@ -410,50 +401,40 @@ async function searchByTitle(songTitle, songwriterName = '') {
   const startTime = Date.now();
 
   try {
-    // Search USCO and Wikipedia in parallel
     const [uscoResult, wikiResult] = await Promise.all([
       lookupUSCOByTitle(songTitle, songwriterName),
       getWikipediaReleaseDate(songTitle, songwriterName)
     ]);
 
-    // Merge results
-    let combined = {
+    const combined = {
       ok: true,
       data: {
-        title: uscoResult.title || songTitle,
-        writers: uscoResult.authors || [],
+        title:              uscoResult.title || songTitle,
+        writers:            uscoResult.authors || [],
         registrationNumber: uscoResult.registrationNumber || '',
-        registrationDate: uscoResult.registrationDate || '',
-        publicationDate: wikiResult.releaseDate || '',
-        confidence: uscoResult.confidence || 'LOW',
-        sources: [],
-        sourceLabel: ''
+        registrationDate:   uscoResult.registrationDate || '',
+        publicationDate:    wikiResult.releaseDate || '',
+        confidence:         uscoResult.confidence || 'NONE',
+        sources:            [],
+        sourceLabel:        ''
       }
     };
 
-    // Build source list
     if (uscoResult.found) combined.data.sources.push('USCO');
     if (wikiResult.found) combined.data.sources.push('Wikipedia');
-
     combined.data.sourceLabel = combined.data.sources.join(' + ') || 'None';
 
-    // If nothing found
     if (!uscoResult.found) {
-      combined.ok = false;
+      combined.ok    = false;
       combined.error = 'Record not found in USCO database';
     }
 
-    const elapsed = Date.now() - startTime;
-    console.log(`[SEARCH] ✅ Completed in ${elapsed}ms`);
-    
+    console.log(`[SEARCH] ✅ Completed in ${Date.now() - startTime}ms`);
     return combined;
 
   } catch (error) {
     console.error('[SEARCH] ❌ Error:', error.message);
-    return {
-      ok: false,
-      error: error.message
-    };
+    return { ok: false, error: error.message };
   }
 }
 
@@ -462,7 +443,6 @@ async function searchByTitle(songTitle, songwriterName = '') {
 // ============================================
 async function initializeIndex() {
   console.log('[INIT] 🚀 Pre-building USCO index...');
-  
   try {
     await buildUSCOIndex();
     console.log('[INIT] ✅ USCO index ready!');
@@ -471,8 +451,4 @@ async function initializeIndex() {
   }
 }
 
-module.exports = {
-  lookupUSCOByNumber,
-  searchByTitle,
-  initializeIndex
-};
+module.exports = { lookupUSCOByNumber, searchByTitle, initializeIndex };
