@@ -1,14 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 
-// ✅ FIXED: Ensure data directory exists in production
 const DATA_DIR = process.env.NODE_ENV === 'production'
   ? '/app/data'
   : __dirname;
 
 const SONGWRITER_LEADS_DIR = path.join(DATA_DIR, 'songwriter_leads');
 
-// Create directories if they don't exist
 if (!fs.existsSync(SONGWRITER_LEADS_DIR)) {
   fs.mkdirSync(SONGWRITER_LEADS_DIR, { recursive: true });
   console.log(`[STORAGE] Created directory: ${SONGWRITER_LEADS_DIR}`);
@@ -21,6 +19,7 @@ const HEADERS = [
   'submitted_at',
   'analysis_id',
 
+  // Contact
   'name',
   'stage_name',
   'email',
@@ -33,20 +32,24 @@ const HEADERS = [
   'consent',
   'marketing',
 
+  // Song basics
   'song_title',
+  'artist_name',      // Bug #10 — NEW
+  'record_label',     // Bug #10 — NEW
   'usco_number',
-  'iswc_number',
   'rights_type',
   'publisher_name',
 
+  // Dates
   'grant_date',
   'publication_date',
   'copyright_secured_date',
 
+  // Legal
   'grant_by_author',
-  'pub_rights_included',
   'work_for_hire',
 
+  // Termination result
   'routing_result',
   'applicable_section',
   'applicable_subsection',
@@ -62,6 +65,7 @@ const HEADERS = [
 
   'cowriters',
 
+  // Monetization
   'mon_sale',
   'mon_license',
   'mon_catalog',
@@ -74,63 +78,38 @@ const HEADERS = [
 
 function escapeCSV(val) {
   if (val === null || val === undefined) return '';
-
   const s = String(val).replace(/"/g, '""');
-
-  return s.includes(',') || s.includes('"') || s.includes('\n')
-    ? `"${s}"`
-    : s;
+  return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
 }
 
 function parseCSVLine(line) {
   const fields = [];
   let cur = '';
   let inQuotes = false;
-
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
-
     if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        cur += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
+      if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
+      else inQuotes = !inQuotes;
     } else if (ch === ',' && !inQuotes) {
-      fields.push(cur);
-      cur = '';
-    } else {
-      cur += ch;
-    }
+      fields.push(cur); cur = '';
+    } else cur += ch;
   }
-
   fields.push(cur);
   return fields;
 }
 
 function parseCSV(content) {
-  const clean = content
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    .trim();
-
+  const clean = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
   if (!clean) return { headers: [], rows: [] };
-
   const lines = clean.split('\n');
   const headers = parseCSVLine(lines[0]).map(h => h.trim());
-
   const rows = lines.slice(1).filter(Boolean).map(line => {
     const fields = parseCSVLine(line);
     const obj = {};
-
-    headers.forEach((h, i) => {
-      obj[h] = fields[i] || '';
-    });
-
+    headers.forEach((h, i) => { obj[h] = fields[i] || ''; });
     return obj;
   });
-
   return { headers, rows };
 }
 
@@ -140,47 +119,30 @@ function ensureCSVHeaders() {
     fs.writeFileSync(CSV_PATH, HEADERS.join(',') + '\n', 'utf8');
     return;
   }
-
   const content = fs.readFileSync(CSV_PATH, 'utf8');
   const { headers, rows } = parseCSV(content);
-
   const missingHeaders = HEADERS.filter(h => !headers.includes(h));
-
   if (missingHeaders.length === 0) return;
-
-  console.log('[STORAGE] Migrating CSV with missing headers:', missingHeaders);
-
+  console.log('[STORAGE] Migrating CSV — adding new columns:', missingHeaders);
   const migratedRows = rows.map(row => {
     const fixed = {};
-
-    HEADERS.forEach(h => {
-      fixed[h] = row[h] || '';
-    });
-
+    HEADERS.forEach(h => { fixed[h] = row[h] || ''; });
     return HEADERS.map(h => escapeCSV(fixed[h])).join(',');
   });
-
   fs.writeFileSync(
     CSV_PATH,
-    HEADERS.join(',') +
-      '\n' +
-      (migratedRows.length ? migratedRows.join('\n') + '\n' : ''),
+    HEADERS.join(',') + '\n' + (migratedRows.length ? migratedRows.join('\n') + '\n' : ''),
     'utf8'
   );
 }
 
 function fmtDate(d) {
   if (!d) return '';
-
   try {
     const date = new Date(d);
-
     if (Number.isNaN(date.getTime())) return '';
-
     return date.toISOString().split('T')[0];
-  } catch {
-    return '';
-  }
+  } catch { return ''; }
 }
 
 function writeWithRetry(filePath, data, retries = 5, delay = 300) {
@@ -192,7 +154,6 @@ function writeWithRetry(filePath, data, retries = 5, delay = 300) {
     } catch (err) {
       if (err.code === 'EBUSY' && i < retries - 1) {
         const start = Date.now();
-
         while (Date.now() - start < delay) {}
       } else {
         console.error('[STORAGE] ❌ Write failed:', err.message);
@@ -204,16 +165,13 @@ function writeWithRetry(filePath, data, retries = 5, delay = 300) {
 
 function normalizeFinalChoice(choice) {
   if (!choice) return '';
-
   const map = {
-    send_email: 'send_email',
-    email: 'send_email',
-    professional: 'professional',
-    connect_professional: 'professional',
-    monetize: 'monetize',
-    royalty_sale: 'monetize',
+    send_email: 'send_email', email: 'send_email',
+    professional: 'professional', connect_professional: 'professional',
+    reclamation: 'professional',
+    monetize: 'monetize', royalty_sale: 'monetize', monetization: 'monetize',
+    email_only: 'send_email',
   };
-
   return map[choice] || choice;
 }
 
@@ -237,14 +195,13 @@ function saveSubmission(payload) {
     const royaltyMessage =
       user.final_monetization_thoughts ||
       user.royalty_message ||
-      user.monetization_message ||
-      user.mon_notes ||
-      '';
+      user.mon_notes || '';
 
     const row = [
       now,
       analysis_id,
 
+      // Contact
       user.name || '',
       user.stageName || '',
       user.email || '',
@@ -254,24 +211,27 @@ function saveSubmission(payload) {
       user.pro || '',
       user.ipi || '',
       user.pro_id || '',
-
       user.consent ? 'yes' : 'no',
       user.marketing ? 'yes' : 'no',
 
+      // Song basics
       s.title || '',
+      s.artistName || '',       // Bug #10
+      s.recordLabel || '',      // Bug #10
       s.uscoNumber || '',
-      s.iswcNumber || '',
       s.rightsType || '',
       s.publisherName || '',
 
+      // Dates
       fmtDate(s.grantDate),
       fmtDate(s.pubDate),
       fmtDate(s.copyrightDate),
 
+      // Legal
       s.grantByAuthor || '',
-      s.pubRights || '',
       s.workForHire || '',
 
+      // Termination result
       r.routing || 'unknown',
       t.regime || r.routing || '',
       t.subsection || '',
@@ -287,16 +247,14 @@ function saveSubmission(payload) {
 
       cowriters,
 
+      // Monetization
       user.mon_sale ? 'yes' : 'no',
       user.mon_license ? 'yes' : 'no',
       user.mon_catalog ? 'yes' : 'no',
-
       user.mon_royalties || '',
       user.mon_email || '',
       user.mon_notes || '',
-
       royaltyMessage,
-
       normalizeFinalChoice(user.final_choice),
     ];
 
