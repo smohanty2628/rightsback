@@ -122,7 +122,7 @@ function buildNotificationEmail(payload) {
 
   return {
     // ✅ FIX: Use Resend's verified sender domain until rightsback.net is verified
-    from: 'Rights Back <onboarding@resend.dev>',
+    from: 'Rights Back <notifications@rightsback.net>',
     to: recipients,
     reply_to: 'jordan@adagegroup.net',
     subject: `🎵 New RightsBack submission — ${user.name || user.email} (${songs.length} song${songs.length !== 1 ? 's' : ''})`,
