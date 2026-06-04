@@ -1,80 +1,79 @@
-const fs = require('fs');
+require('dotenv').config();
+
+const express = require('express');
+const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
+
+const { saveSubmission } = require('./storage');
+const { sendNotification } = require('./email');
+const { analyzeSubmission } = require('./analysis');
+
+const dbSearch = require('./database-search');
+
+try {
+  console.log('[INIT] 🚀 Pre-building USCO index...');
+  dbSearch.initializeIndex();
+  console.log('[INIT] ✅ USCO index built successfully');
+} catch (err) {
+  console.log('[INIT] ⚠️ USCO index not available (optional) - continuing without it');
+  console.log('[INIT] Error:', err.message);
+}
+
+const app = express();
+const multer = require('multer');
+const upload = multer({ dest: '/tmp/' });
+
+app.post('/admin/upload-usco', upload.single('file'), async (req, res) => {
+  try {
+    const dest = '/app/data/usco/reg_musical_work.csv.gz';
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(req.file.path, dest);
+    fs.unlinkSync(req.file.path);
+    res.json({ success: true, message: 'USCO file uploaded to ' + dest });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+
+const ADMIN_USER = process.env.ADMIN_USER || 'admin';
+const ADMIN_PASS = process.env.ADMIN_PASS || 'admin';
+const ADMIN_TOKEN = Buffer.from(`${ADMIN_USER}:${ADMIN_PASS}`).toString('base64');
 
 const DATA_DIR = process.env.NODE_ENV === 'production'
   ? '/app/data'
-  : __dirname;
+  : path.join(__dirname, 'data');
 
 const SONGWRITER_LEADS_DIR = path.join(DATA_DIR, 'songwriter_leads');
+const DELETED_RECORDS_DIR  = path.join(DATA_DIR, 'deleted_records');
 
-if (!fs.existsSync(SONGWRITER_LEADS_DIR)) {
-  fs.mkdirSync(SONGWRITER_LEADS_DIR, { recursive: true });
-  console.log(`[STORAGE] Created directory: ${SONGWRITER_LEADS_DIR}`);
+const CSV_PATH       = path.join(SONGWRITER_LEADS_DIR, 'submissions.csv');
+const CONTACTED_PATH = path.join(SONGWRITER_LEADS_DIR, 'contacted.json');
+const ANALYSIS_DIR   = path.join(SONGWRITER_LEADS_DIR, 'analysis_records');
+
+const archiveRoot        = DELETED_RECORDS_DIR;
+const submissionsArchive = path.join(archiveRoot, 'submissions');
+
+console.log(`[INIT] 📁 Data directory: ${DATA_DIR}`);
+console.log(`[INIT] 📄 CSV path: ${CSV_PATH}`);
+console.log(`[INIT] 📋 Contacted path: ${CONTACTED_PATH}`);
+console.log(`[INIT] 🗑️  Archive path: ${submissionsArchive}`);
+
+[SONGWRITER_LEADS_DIR, ANALYSIS_DIR, archiveRoot, submissionsArchive].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log(`[INIT] ✅ Created directory: ${dir}`);
+  }
+});
+
+function adminAuth(req, res, next) {
+  const token = req.headers['x-admin-token'];
+  if (token === ADMIN_TOKEN) return next();
+  return res.status(401).json({ ok: false, error: 'Unauthorized' });
 }
-
-const CSV_PATH = path.join(SONGWRITER_LEADS_DIR, 'submissions.csv');
-console.log(`[STORAGE] CSV path: ${CSV_PATH}`);
-
-const HEADERS = [
-  'submitted_at',
-  'analysis_id',
-
-  // Contact
-  'name',
-  'stage_name',
-  'email',
-  'phone',
-  'contact_pref',
-  'country',
-  'pro',
-  'ipi',
-  'pro_id',
-  'consent',
-  'marketing',
-
-  // Song basics
-  'song_title',
-  'artist_name',      // Bug #10 — NEW
-  'record_label',     // Bug #10 — NEW
-  'usco_number',
-  'rights_type',
-  'publisher_name',
-
-  // Dates
-  'grant_date',
-  'publication_date',
-  'copyright_secured_date',
-
-  // Legal
-  'grant_by_author',
-  'work_for_hire',
-
-  // Termination result
-  'routing_result',
-  'applicable_section',
-  'applicable_subsection',
-
-  'term_window_open',
-  'term_window_close',
-  'notice_window_open',
-  'notice_window_close',
-  'recordation_deadline',
-
-  'status_flag',
-  'window_missed',
-
-  'cowriters',
-
-  // Monetization
-  'mon_sale',
-  'mon_license',
-  'mon_catalog',
-  'mon_royalties',
-  'mon_email',
-  'mon_notes',
-  'royalty_message',
-  'final_choice',
-];
 
 function escapeCSV(val) {
   if (val === null || val === undefined) return '';
@@ -99,173 +98,312 @@ function parseCSVLine(line) {
   return fields;
 }
 
-function parseCSV(content) {
-  const clean = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
-  if (!clean) return { headers: [], rows: [] };
-  const lines = clean.split('\n');
+function readCSVRaw(filePath) {
+  if (!fs.existsSync(filePath)) return { headers: [], rows: [] };
+  const content = fs.readFileSync(filePath, 'utf8')
+    .replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+  if (!content) return { headers: [], rows: [] };
+  const lines = content.split('\n');
   const headers = parseCSVLine(lines[0]).map(h => h.trim());
-  const rows = lines.slice(1).filter(Boolean).map(line => {
+  const rows = lines.slice(1).filter(Boolean).map((line, idx) => {
     const fields = parseCSVLine(line);
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = fields[i] || ''; });
+    const obj = { _row: idx };
+    headers.forEach((h, i) => { obj[h] = (fields[i] || '').trim(); });
+    obj.royalty_message =
+      obj.royalty_message || obj.final_monetization_thoughts ||
+      obj.monetization_message || obj.mon_message || obj.mon_notes || '';
     return obj;
   });
   return { headers, rows };
 }
 
-function ensureCSVHeaders() {
-  if (!fs.existsSync(CSV_PATH)) {
-    console.log('[STORAGE] Creating new CSV file with headers');
-    fs.writeFileSync(CSV_PATH, HEADERS.join(',') + '\n', 'utf8');
-    return;
-  }
-  const content = fs.readFileSync(CSV_PATH, 'utf8');
-  const { headers, rows } = parseCSV(content);
-  const missingHeaders = HEADERS.filter(h => !headers.includes(h));
-  if (missingHeaders.length === 0) return;
-  console.log('[STORAGE] Migrating CSV — adding new columns:', missingHeaders);
-  const migratedRows = rows.map(row => {
-    const fixed = {};
-    HEADERS.forEach(h => { fixed[h] = row[h] || ''; });
-    return HEADERS.map(h => escapeCSV(fixed[h])).join(',');
-  });
+function parseCSV(filePath) { return readCSVRaw(filePath).rows; }
+
+function writeCSV(filePath, headers, rows) {
+  const headerLine = headers.join(',');
+  const bodyLines  = rows.map(row => headers.map(h => escapeCSV(row[h] || '')).join(','));
   fs.writeFileSync(
-    CSV_PATH,
-    HEADERS.join(',') + '\n' + (migratedRows.length ? migratedRows.join('\n') + '\n' : ''),
+    filePath,
+    headerLine + '\n' + (bodyLines.length ? bodyLines.join('\n') + '\n' : ''),
     'utf8'
   );
 }
 
-function fmtDate(d) {
-  if (!d) return '';
+function getContacted() {
+  if (!fs.existsSync(CONTACTED_PATH)) return {};
+  try { return JSON.parse(fs.readFileSync(CONTACTED_PATH, 'utf8')); }
+  catch { return {}; }
+}
+
+function saveContacted(data) {
+  fs.writeFileSync(CONTACTED_PATH, JSON.stringify(data, null, 2), 'utf8');
+}
+
+function saveAnalysisRecord(analysis_id, payload) {
+  if (!analysis_id) return;
+  const filePath = path.join(ANALYSIS_DIR, `${analysis_id}.json`);
+  fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf8');
+}
+
+function getAnalysisRecord(analysis_id) {
+  const filePath = path.join(ANALYSIS_DIR, `${analysis_id}.json`);
+  if (!fs.existsSync(filePath)) return null;
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+}
+
+function archiveSubmission(rowId, rowData, headers) {
   try {
-    const date = new Date(d);
-    if (Number.isNaN(date.getTime())) return '';
-    return date.toISOString().split('T')[0];
-  } catch { return ''; }
-}
-
-function writeWithRetry(filePath, data, retries = 5, delay = 300) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      fs.appendFileSync(filePath, data, 'utf8');
-      console.log(`[STORAGE] ✅ Appended ${data.split('\n').length - 1} row(s) to CSV`);
-      return;
-    } catch (err) {
-      if (err.code === 'EBUSY' && i < retries - 1) {
-        const start = Date.now();
-        while (Date.now() - start < delay) {}
-      } else {
-        console.error('[STORAGE] ❌ Write failed:', err.message);
-        throw err;
-      }
-    }
+    const timestamp = new Date().toISOString()
+      .replace(/:/g, '-').replace(/\..+/, '').replace('T', '_');
+    const filename  = `${timestamp}_deleted.csv`;
+    const filepath  = path.join(submissionsArchive, filename);
+    const archiveContent =
+      headers.join(',') + '\n' +
+      headers.map(h => escapeCSV(rowData[h] || '')).join(',') + '\n';
+    fs.writeFileSync(filepath, archiveContent, 'utf8');
+    console.log(`[ARCHIVE] ✅ Saved deleted record to: ${filepath}`);
+    return filepath;
+  } catch (err) {
+    console.error('[ARCHIVE ERROR]', err);
+    return null;
   }
 }
 
-function normalizeFinalChoice(choice) {
-  if (!choice) return '';
-  const map = {
-    send_email: 'send_email', email: 'send_email',
-    professional: 'professional', connect_professional: 'professional',
-    reclamation: 'professional',
-    monetize: 'monetize', royalty_sale: 'monetize', monetization: 'monetize',
-    email_only: 'send_email',
-  };
-  return map[choice] || choice;
-}
-
-function saveSubmission(payload) {
-  const { user = {}, songs = [], analysis_id = '' } = payload || {};
-  const now = new Date().toISOString();
-
-  console.log(`[STORAGE] Saving submission: ${analysis_id}`);
-  console.log(`[STORAGE] User: ${user.email}, Songs: ${songs.length}`);
-
-  ensureCSVHeaders();
-
-  const rows = songs.map(s => {
-    const r = s && s.result ? s.result : {};
-    const t = r.timing ? r.timing : {};
-
-    const cowriters = Array.isArray(s.cowriters)
-      ? s.cowriters.map(c => c.name).filter(Boolean).join(' | ')
-      : '';
-
-    const royaltyMessage =
-      user.final_monetization_thoughts ||
-      user.royalty_message ||
-      user.mon_notes || '';
-
-    const row = [
-      now,
-      analysis_id,
-
-      // Contact
-      user.name || '',
-      user.stageName || '',
-      user.email || '',
-      user.phone || '',
-      user.contact_pref || '',
-      user.country || '',
-      user.pro || '',
-      user.ipi || '',
-      user.pro_id || '',
-      user.consent ? 'yes' : 'no',
-      user.marketing ? 'yes' : 'no',
-
-      // Song basics
-      s.title || '',
-      s.artistName || '',       // Bug #10
-      s.recordLabel || '',      // Bug #10
-      s.uscoNumber || '',
-      s.rightsType || '',
-      s.publisherName || '',
-
-      // Dates
-      fmtDate(s.grantDate),
-      fmtDate(s.pubDate),
-      fmtDate(s.copyrightDate),
-
-      // Legal
-      s.grantByAuthor || '',
-      s.workForHire || '',
-
-      // Termination result
-      r.routing || 'unknown',
-      t.regime || r.routing || '',
-      t.subsection || '',
-
-      fmtDate(t.termStart),
-      fmtDate(t.termEnd),
-      fmtDate(t.noticeOpen),
-      fmtDate(t.noticeClose),
-      fmtDate(t.recordationDeadline),
-
-      t.statusFlag || '',
-      t.missed ? 'yes' : 'no',
-
-      cowriters,
-
-      // Monetization
-      user.mon_sale ? 'yes' : 'no',
-      user.mon_license ? 'yes' : 'no',
-      user.mon_catalog ? 'yes' : 'no',
-      user.mon_royalties || '',
-      user.mon_email || '',
-      user.mon_notes || '',
-      royaltyMessage,
-      normalizeFinalChoice(user.final_choice),
-    ];
-
-    return row.map(escapeCSV).join(',');
+function deleteSubmissionRow(rowId) {
+  const id = Number(rowId);
+  if (!Number.isInteger(id) || id < 0) return { ok: false, error: 'Invalid row id' };
+  const { headers, rows } = readCSVRaw(CSV_PATH);
+  if (!headers.length)   return { ok: false, error: 'No submissions file found' };
+  if (id >= rows.length) return { ok: false, error: 'Row not found' };
+  const deletedRow  = rows[id];
+  const archivePath = archiveSubmission(id, deletedRow, headers);
+  const newRows     = rows.filter((_, idx) => idx !== id);
+  writeCSV(CSV_PATH, headers, newRows);
+  const oldContacted = getContacted();
+  const newContacted = {};
+  Object.keys(oldContacted).forEach(key => {
+    const oldIndex = Number(key);
+    if (!Number.isInteger(oldIndex)) return;
+    if (oldIndex === id) return;
+    const newIndex = oldIndex > id ? oldIndex - 1 : oldIndex;
+    newContacted[String(newIndex)] = oldContacted[key];
   });
-
-  if (rows.length) {
-    writeWithRetry(CSV_PATH, rows.join('\n') + '\n');
-  } else {
-    console.log('[STORAGE] ⚠️ No rows to save');
-  }
+  saveContacted(newContacted);
+  return { ok: true, archived: archivePath ? path.basename(archivePath) : null };
 }
 
-module.exports = { saveSubmission };
+// ── FIX: buildStats correctly handles 3-state status flags ──────────────
+// Old: counted "not yet open" as windowOpen because it contains "open"
+// New: explicitly requires "open" but NOT "not yet"
+// Also renamed "missed" → "filingClosed" to match new badge wording
+function buildStats(rows) {
+  const contacted = getContacted();
+  return {
+    total:       rows.length,
+    s203:        rows.filter(r => r.routing_result === '203').length,
+    s304:        rows.filter(r => r.routing_result === '304').length,
+    // FIX: "not yet open" contains "open" — must exclude it
+    windowOpen:  rows.filter(r => {
+      const f = String(r.status_flag || '').toLowerCase();
+      return f.includes('open') && !f.includes('not yet');
+    }).length,
+    // FIX: catch both old "passed" wording and new "filing deadline" wording
+    filingClosed: rows.filter(r => {
+      const f = String(r.status_flag || '').toLowerCase();
+      return f.includes('closed') || f.includes('filing deadline') || f.includes('passed') || r.window_missed === 'yes';
+    }).length,
+    needsReview: rows.filter(r => r.routing_result === 'needs-review').length,
+    contacted:   Object.values(contacted).filter(Boolean).length,
+  };
+}
+
+app.use(cors());
+app.use(express.json({ limit: '5mb' }));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ── Submit ────────────────────────────────────────────────────────────────────
+app.post('/api/submit', async (req, res) => {
+  const startTime = Date.now();
+  try {
+    const { user, songs } = req.body || {};
+    if (!user || !user.email)
+      return res.status(400).json({ ok: false, error: 'Email required' });
+    if (!Array.isArray(songs) || songs.length === 0)
+      return res.status(400).json({ ok: false, error: 'At least one song is required' });
+
+    const analysis_id = crypto.randomUUID();
+    saveSubmission({ analysis_id, user, songs });
+    console.log(`[SUBMIT] ✅ Saved in ${Date.now() - startTime}ms`);
+
+    res.json({ ok: true, analysis_id, redirectTo: '/results' });
+
+    setImmediate(async () => {
+      try {
+        console.log('[EMAIL] 📧 Sending notification...');
+        await sendNotification({ analysis_id, user, songs });
+        console.log('[EMAIL] ✅ Notification sent');
+      } catch (emailErr) {
+        console.error('[EMAIL] ❌ Failed:', emailErr.message);
+      }
+    });
+
+    setImmediate(async () => {
+      try {
+        const argusUrl  = process.env.ARGUS_MUSIC_API_URL || 'http://localhost:5000/api/sync/from-rightsback';
+        const firstSong = songs && songs[0] ? songs[0] : {};
+        const forwardData = {
+          full_name:       user.name           || user.email.split('@')[0],
+          email:           user.email,
+          phone:           user.phone          || null,
+          pro_affiliation: user.pro            || null,
+          ipi_number:      user.ipi            || null,
+          pro_id:          user.pro_id         || null,
+          song_title:      firstSong.title     || null,
+          artist_name:     firstSong.artistName|| null,
+          release_year:    firstSong.year      || null,
+        };
+        console.log('[Argus Sync] 🔄 Sending to Argus Music...');
+        const syncResponse = await fetch(argusUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(forwardData),
+        });
+        const syncResult = await syncResponse.json();
+        if (syncResult.ok) {
+          console.log('[Argus Sync] ✓', syncResult.message, '| matched:', syncResult.matched, '| csv:', syncResult.csv);
+        } else {
+          console.warn('[Argus Sync] ⚠️ Warning:', syncResult.error);
+        }
+      } catch (syncErr) {
+        console.error('[Argus Sync] ❌ Failed:', syncErr.message);
+      }
+    });
+
+  } catch (err) {
+    console.error('[submit]', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+// ── Lookup endpoints ──────────────────────────────────────────────────────────
+app.post('/api/lookup/usco-by-number', async (req, res) => {
+  try {
+    const { registrationNumber } = req.body;
+    if (!registrationNumber) return res.status(400).json({ error: 'Registration number is required' });
+    console.log('[API] USCO lookup by number:', registrationNumber);
+    const result = await dbSearch.lookupUSCOByNumber(registrationNumber);
+    res.json(result);
+  } catch (error) {
+    console.error('[API] USCO lookup error:', error);
+    res.status(500).json({ error: 'Lookup failed', message: error.message });
+  }
+});
+
+app.post('/api/lookup/iswc-by-number', async (req, res) => {
+  res.json({ found: false, error: 'ISWC lookup not yet implemented. Please use title search instead.' });
+});
+
+app.post('/api/lookup/search-by-title', async (req, res) => {
+  try {
+    const { songTitle, songwriterName } = req.body;
+    if (!songTitle) return res.status(400).json({ error: 'Song title is required' });
+    console.log('[API] Search by title:', songTitle, 'by', songwriterName || 'Unknown');
+    const results = await dbSearch.searchByTitle(songTitle, songwriterName);
+    res.json(results);
+  } catch (error) {
+    console.error('[API] Title search error:', error);
+    res.status(500).json({ error: 'Search failed', message: error.message });
+  }
+});
+
+// ── Analyze ───────────────────────────────────────────────────────────────────
+app.post('/api/analyze', async (req, res) => {
+  try {
+    const submissionData = req.body || {};
+    if (!submissionData.songTitle || !submissionData.songwriterName)
+      return res.status(400).json({ ok: false, error: 'Song title and songwriter name required' });
+    const analysis = await analyzeSubmission(submissionData);
+    if (submissionData.analysisId) {
+      saveAnalysisRecord(submissionData.analysisId, {
+        analysis_id: submissionData.analysisId,
+        created_at: new Date().toISOString(),
+        submissionData,
+        analysis,
+      });
+    }
+    res.json({ ok: true, analysis });
+  } catch (err) {
+    console.error('[analyze]', err);
+    res.status(500).json({ ok: false, error: 'Analysis failed. Please try again.' });
+  }
+});
+
+// ── Admin endpoints ───────────────────────────────────────────────────────────
+app.post('/api/admin/login', (req, res) => {
+  const { username, password } = req.body || {};
+  if (username === ADMIN_USER && password === ADMIN_PASS)
+    return res.json({ ok: true, token: ADMIN_TOKEN });
+  res.status(401).json({ ok: false, error: 'Invalid credentials' });
+});
+
+app.get('/api/admin/submissions', adminAuth, (req, res) => {
+  const rows      = parseCSV(CSV_PATH);
+  const contacted = getContacted();
+  const data      = rows.map((r, i) => ({ ...r, contacted: contacted[String(i)] || false }));
+  res.json({ ok: true, data });
+});
+
+app.get('/api/admin/stats', adminAuth, (req, res) => {
+  const rows = parseCSV(CSV_PATH);
+  res.json({ ok: true, stats: buildStats(rows) });
+});
+
+app.post('/api/admin/mark-contacted', adminAuth, (req, res) => {
+  try {
+    const { id, value } = req.body || {};
+    const contacted = getContacted();
+    contacted[String(id)] = Boolean(value);
+    saveContacted(contacted);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[mark-contacted]', err);
+    res.status(500).json({ ok: false, error: 'Failed to update contacted status' });
+  }
+});
+
+app.get('/api/admin/analysis/:id', adminAuth, (req, res) => {
+  try {
+    const data = getAnalysisRecord(req.params.id);
+    if (!data) return res.status(404).json({ ok: false, error: 'Analysis not found' });
+    res.json({ ok: true, data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Failed to load analysis' });
+  }
+});
+
+app.post('/api/admin/delete-submission', adminAuth, (req, res) => {
+  try {
+    const { id } = req.body || {};
+    const result  = deleteSubmissionRow(id);
+    if (!result.ok) return res.status(400).json(result);
+    res.json({ ok: true, archived: result.archived });
+  } catch (err) {
+    console.error('[delete-submission]', err);
+    res.status(500).json({ ok: false, error: 'Delete failed' });
+  }
+});
+
+// ── Page routes ───────────────────────────────────────────────────────────────
+app.get('/admin',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/success', (req, res) => res.sendFile(path.join(__dirname, 'public', 'success.html')));
+app.get('/results', (req, res) => res.sendFile(path.join(__dirname, 'public', 'results.html')));
+app.get('*',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`\n✅ Rights Back Server Running`);
+  console.log(`   Port: ${PORT}`);
+  console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`   Data Directory: ${DATA_DIR}`);
+  console.log(`   Admin Panel: /admin\n`);
+});

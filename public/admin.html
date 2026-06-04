@@ -74,32 +74,31 @@ td{padding:9px 12px;font-size:13px;border-bottom:1px solid #f0ece4;vertical-alig
 tr:last-child td{border-bottom:none;}
 tr:hover td{background:#fdfcf9;}
 
-/* column widths */
 td:nth-child(1),th:nth-child(1){width:40px;text-align:center;}
 td:nth-child(2),th:nth-child(2){width:90px;}
 td:nth-child(3),th:nth-child(3){width:130px;}
 td:nth-child(4),th:nth-child(4){width:180px;}
-td:nth-child(5),th:nth-child(5){width:110px;}  /* Phone */
-td:nth-child(6),th:nth-child(6){width:70px;}   /* Country */
-td:nth-child(7),th:nth-child(7){width:70px;}   /* PRO */
-td:nth-child(8),th:nth-child(8){width:140px;}  /* Song */
-td:nth-child(9),th:nth-child(9){width:140px;}  /* Artist — NEW */
-td:nth-child(10),th:nth-child(10){width:120px;} /* Label — NEW */
-td:nth-child(11),th:nth-child(11){width:120px;} /* USCO */
-td:nth-child(12),th:nth-child(12){width:90px;}  /* Rights Type */
-td:nth-child(13),th:nth-child(13){width:130px;} /* Publisher */
-td:nth-child(14),th:nth-child(14){width:110px;} /* Grant Date */
-td:nth-child(15),th:nth-child(15){width:110px;} /* Pub Date */
-td:nth-child(16),th:nth-child(16){width:110px;} /* Reg Date */
-td:nth-child(17),th:nth-child(17){width:80px;}  /* Regime */
-td:nth-child(18),th:nth-child(18){width:100px;} /* Status */
-td:nth-child(19),th:nth-child(19){width:110px;} /* Term Opens */
-td:nth-child(20),th:nth-child(20){width:110px;} /* Term Closes */
-td:nth-child(21),th:nth-child(21){width:110px;} /* Notice Deadline */
-td:nth-child(22),th:nth-child(22){width:90px;}  /* Next Step */
-td:nth-child(23),th:nth-child(23){max-width:180px;overflow:hidden;text-overflow:ellipsis;} /* Royalty Msg */
-td:nth-child(24),th:nth-child(24){width:110px;} /* Contacted */
-td:nth-child(25),th:nth-child(25){width:180px;} /* Actions */
+td:nth-child(5),th:nth-child(5){width:110px;}
+td:nth-child(6),th:nth-child(6){width:70px;}
+td:nth-child(7),th:nth-child(7){width:70px;}
+td:nth-child(8),th:nth-child(8){width:140px;}
+td:nth-child(9),th:nth-child(9){width:140px;}
+td:nth-child(10),th:nth-child(10){width:120px;}
+td:nth-child(11),th:nth-child(11){width:120px;}
+td:nth-child(12),th:nth-child(12){width:90px;}
+td:nth-child(13),th:nth-child(13){width:130px;}
+td:nth-child(14),th:nth-child(14){width:110px;}
+td:nth-child(15),th:nth-child(15){width:110px;}
+td:nth-child(16),th:nth-child(16){width:110px;}
+td:nth-child(17),th:nth-child(17){width:80px;}
+td:nth-child(18),th:nth-child(18){width:160px;}
+td:nth-child(19),th:nth-child(19){width:110px;}
+td:nth-child(20),th:nth-child(20){width:110px;}
+td:nth-child(21),th:nth-child(21){width:110px;}
+td:nth-child(22),th:nth-child(22){width:90px;}
+td:nth-child(23),th:nth-child(23){max-width:180px;overflow:hidden;text-overflow:ellipsis;}
+td:nth-child(24),th:nth-child(24){width:110px;}
+td:nth-child(25),th:nth-child(25){width:200px;}
 
 .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap;}
 .badge-203{background:var(--green-bg);color:var(--green);}
@@ -164,7 +163,7 @@ td:nth-child(25),th:nth-child(25){width:180px;} /* Actions */
       <div class="stat-card"><div class="stat-label">Section 203</div><div class="stat-value green" id="st-203">—</div></div>
       <div class="stat-card"><div class="stat-label">Section 304</div><div class="stat-value blue" id="st-304">—</div></div>
       <div class="stat-card"><div class="stat-label">Window Open</div><div class="stat-value green" id="st-open">—</div></div>
-      <div class="stat-card"><div class="stat-label">Window Missed</div><div class="stat-value red" id="st-missed">—</div></div>
+      <div class="stat-card"><div class="stat-label">Filing Closed</div><div class="stat-value red" id="st-missed">—</div></div>
       <div class="stat-card"><div class="stat-label">Needs Review</div><div class="stat-value amber" id="st-review">—</div></div>
       <div class="stat-card"><div class="stat-label">Contacted</div><div class="stat-value dark" id="st-contacted">—</div></div>
     </div>
@@ -183,8 +182,8 @@ td:nth-child(25),th:nth-child(25){width:180px;} /* Actions */
         <option value="">All statuses</option>
         <option value="open">Window Open ✓</option>
         <option value="upcoming">Not Yet Open</option>
-        <option value="passed">Passed</option>
-        <option value="missed">Missed</option>
+        <option value="closed">Filing Closed</option>
+        <option value="missed">Window Missed</option>
       </select>
       <select id="contactFilter" onchange="filterTable()">
         <option value="">All</option>
@@ -294,7 +293,7 @@ async function loadStats() {
     document.getElementById('st-203').textContent       = s.s203;
     document.getElementById('st-304').textContent       = s.s304;
     document.getElementById('st-open').textContent      = s.windowOpen;
-    document.getElementById('st-missed').textContent    = s.missed;
+    document.getElementById('st-missed').textContent    = s.filingClosed;
     document.getElementById('st-review').textContent    = s.needsReview;
     document.getElementById('st-contacted').textContent = s.contacted;
   } catch {}
@@ -321,14 +320,21 @@ function regimeBadge(r) {
   return '<span class="badge badge-ineligible">Ineligible</span>';
 }
 
+// ── FIX: Updated to handle all 3 Herb status states correctly ──────────
+// New status flags from index.html:
+//   "Notice filing period open — you may serve notice now"          → Open ✓
+//   "Notice filing period not yet open — window opens on [date]"    → Upcoming
+//   "Notice filing period closed — filing deadline was [date]"      → Closed
+//   window_missed=yes                                               → Missed
 function statusBadge(flag, missed) {
   if (missed === 'yes') return '<span class="badge badge-missed">Missed</span>';
   if (!flag) return '—';
   const f = String(flag).toLowerCase();
-  if (f.includes('not yet')) return '<span class="badge badge-upcoming">Upcoming</span>';
-  if (f.includes('open'))    return '<span class="badge badge-open">Open ✓</span>';
-  if (f.includes('closing')) return '<span class="badge badge-upcoming">Closing</span>';
-  if (f.includes('passed'))  return '<span class="badge badge-passed">Passed</span>';
+  // Check "not yet open" BEFORE "open" to avoid false positive
+  if (f.includes('not yet'))                          return '<span class="badge badge-upcoming">Not Yet Open</span>';
+  if (f.includes('open') && !f.includes('not yet'))  return '<span class="badge badge-open">Open ✓</span>';
+  // Handle both old "passed" wording and new "filing deadline" wording
+  if (f.includes('closed') || f.includes('filing deadline') || f.includes('passed')) return '<span class="badge badge-passed">Filing Closed</span>';
   return `<span class="badge badge-review">${safeText(flag)}</span>`;
 }
 
@@ -341,6 +347,7 @@ function nextStepLabel(row) {
   return map[row.final_choice] || row.final_choice || '—';
 }
 
+// ── FIX: Status filter correctly excludes "not yet open" from "open" ──
 function filterTable() {
   const search  = document.getElementById('searchInput').value.toLowerCase();
   const regime  = document.getElementById('regimeFilter').value;
@@ -353,10 +360,12 @@ function filterTable() {
     if (status) {
       const f = (r.status_flag || '').toLowerCase();
       const m = r.window_missed === 'yes';
-      if (status === 'open'     && !f.includes('open'))    return false;
-      if (status === 'upcoming' && !f.includes('not yet')) return false;
-      if (status === 'passed'   && !f.includes('passed'))  return false;
-      if (status === 'missed'   && !m)                     return false;
+      // FIX: "open" must exclude "not yet open"
+      if (status === 'open'    && !(f.includes('open') && !f.includes('not yet'))) return false;
+      if (status === 'upcoming' && !f.includes('not yet'))                          return false;
+      // FIX: "closed" catches new "filing deadline" wording + old "passed"
+      if (status === 'closed'  && !(f.includes('closed') || f.includes('filing deadline') || f.includes('passed'))) return false;
+      if (status === 'missed'  && !m)                                               return false;
     }
     if (contact === 'yes' && !r.contacted) return false;
     if (contact === 'no'  &&  r.contacted) return false;
@@ -399,7 +408,7 @@ function filterTable() {
         <td style="font-size:12px;">${safeText(r.publication_date||'—')}</td>
         <td style="font-size:12px;">${safeText(r.copyright_secured_date||'—')}</td>
         <td>${regimeBadge(r.routing_result)}</td>
-        <td>${statusBadge(r.status_flag, r.window_missed)}</td>
+        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;" title="${safeText(r.status_flag||'')}">${statusBadge(r.status_flag, r.window_missed)}</td>
         <td style="font-size:12px;">${safeText(r.term_window_open||'—')}</td>
         <td style="font-size:12px;">${safeText(r.term_window_close||'—')}</td>
         <td style="font-size:12px;">${safeText(r.notice_window_close||'—')}</td>
@@ -457,7 +466,7 @@ async function downloadLeadPDF(rowId) {
   const row = allRows.find(r => Number(r._row) === Number(rowId));
   if (!row) { alert('Submission not found.'); return; }
   if (!row.analysis_id) {
-    alert('No saved analysis for this submission. The user needs to open the results page first so the analysis is stored on the server.');
+    alert('No saved analysis for this submission. The user needs to open the results page first.');
     return;
   }
   try {
