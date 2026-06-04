@@ -1266,62 +1266,11 @@ h2.page-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:
     </div>
   </div>
 
-  <!-- STEP 6: MONETIZATION -->
-  <div class="step" id="step6">
-    <div class="section-label">Step 3b of 4 — Monetization</div>
-    <h2 class="page-title">You may still have options</h2>
-    <p class="page-desc">Even if the statutory termination window has passed, you may have opportunities to monetize your song royalties or explore a sale or licensing transaction.</p>
-    <div class="card">
-      <div class="card-section">
-        <div class="cs-label">I am interested in</div>
-        <div class="mon-opt" id="monOpt1" onclick="toggleMon('monOpt1','mon_sale')">
-          <input type="checkbox" id="mon_sale"/>
-          <div class="mon-opt-text"><strong>Exploring a sale of my rights</strong><span>Transfer ownership of your copyright or termination interest to a qualified buyer</span></div>
-        </div>
-        <div class="mon-opt" id="monOpt2" onclick="toggleMon('monOpt2','mon_license')">
-          <input type="checkbox" id="mon_license"/>
-          <div class="mon-opt-text"><strong>Licensing or royalty monetization</strong><span>License your rights to generate ongoing royalty income without a full sale</span></div>
-        </div>
-        <div class="mon-opt" id="monOpt3" onclick="toggleMon('monOpt3','mon_catalog')">
-          <input type="checkbox" id="mon_catalog"/>
-          <div class="mon-opt-text"><strong>Full catalog review</strong><span>Have our team review your entire catalog for termination and monetization opportunities</span></div>
-        </div>
-      </div>
-      <div class="card-section">
-        <div class="cs-label">Additional details</div>
-        <div class="field-row">
-          <div class="field">
-            <label>Approximate annual royalties <span class="opt">helps us prioritize</span></label>
-            <select id="monRoyalties">
-              <option value="">Prefer not to say</option>
-              <option value="under_1k">Under $1,000 / year</option>
-              <option value="1k_10k">$1,000 – $10,000 / year</option>
-              <option value="10k_50k">$10,000 – $50,000 / year</option>
-              <option value="50k_plus">$50,000+ / year</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Best email for follow-up <span class="opt">if different from above</span></label>
-            <input type="email" id="monEmail" placeholder=""/>
-          </div>
-        </div>
-        <div class="field">
-          <label>Additional comments <span class="opt">optional</span></label>
-          <textarea id="monNotes" placeholder="Any other context that might be helpful…"></textarea>
-        </div>
-      </div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-secondary" onclick="goTo(5)">← Back</button>
-      <button class="btn btn-primary" onclick="lastStepBeforeFinal=6;goTo(7)">Continue →</button>
-    </div>
-  </div>
-
   <!-- STEP 7: NEXT STEPS (FOR ELIGIBLE SONGS) -->
   <div class="step" id="step7">
     <div class="section-label">Step 4 of 4 — Next Steps</div>
     <h2 class="page-title">Next Steps</h2>
-    <p class="page-desc">Based on your analysis, you have potential termination rights. Here's how we can help you move forward.</p>
+    <p class="page-desc">Based on your analysis, here's how we can help you move forward — whether that's filing a termination notice or exploring monetization and licensing options.</p>
     
     <div class="card">
       <div class="cs-label" style="margin-bottom:14px;">What would you like to do next? <span class="req">*</span></div>
@@ -2345,7 +2294,7 @@ function renderResults(){
         ⚠ <strong>Dates are estimated</strong> — calculated from your release date because no publishing contract date was entered.
         For greater accuracy, enter your Grant/transfer date in the field above and re-analyze.
       </div>` : ''}
-   ${t.missed ? `
+   ${t.statusClass === 'flag-passed' ? `
   <p style="font-size:12px;margin-top:10px;color:var(--red);">
     Notice filing period closed — termination window has passed. Monetization options may still be available — continue to the next step.
   </p>
@@ -2373,27 +2322,8 @@ function applyDynamicTheme(){
 
 function nextAfterResults(){
   applyDynamicTheme();
-  
-  // Check if any song is eligible for termination (not ineligible, and window hasn't passed)
-  const hasEligibleSong = songs.some(s => {
-    const r = s.result;
-    if (!r) return false;
-    // Eligible if routing is 203 or 304, and window not missed
-    if ((r.routing === '203' || r.routing === '304') && r.timing && !r.timing.missed) {
-      return true;
-    }
-    return false;
-  });
-  
-  if (hasEligibleSong) {
-    // Go to "Next Steps" page (Step 7) for eligible songs
-    lastStepBeforeFinal = 5;
-    goTo(7);
-  } else {
-    // Go to "You Still May Have Options" page (Step 6) for ineligible/missed songs
-    lastStepBeforeFinal = 5;
-    goTo(6);
-  }
+  lastStepBeforeFinal = 5;
+  goTo(7);
 }
 
 function backFromFinal(){
