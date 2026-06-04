@@ -915,7 +915,7 @@ h2.page-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:
     <div style="margin:20px 0 28px;background:#1a1a18;border-radius:16px;padding:28px 24px;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
       <div style="text-align:center;margin-bottom:20px;">
         <div style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:700;color:#f5f0e8;margin-bottom:6px;">Rights Back®</div>
-        <div style="font-size:15px;color:#ccc;font-weight:400;">Reclaim Your Music Rights</div>
+        <div style="font-size:15px;color:#ccc;font-weight:400;">Your music, your rights — backed by proprietary rights data and AI that translates copyright law into plain English.</div>
       </div>
       <div style="position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden;box-shadow:0 25px 60px rgba(29,78,216,0.3);">
         <iframe
@@ -929,7 +929,7 @@ h2.page-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:
         <button onclick="goTo(2)" style="background:linear-gradient(135deg,#1d4ed8,#1e40af);color:white;border:none;padding:16px 44px;font-size:17px;font-weight:700;border-radius:10px;cursor:pointer;box-shadow:0 12px 36px rgba(29,78,216,0.5);letter-spacing:0.5px;">Start Free Analysis →</button>
       </div>
       <div style="text-align:center;color:#888;margin-top:16px;font-size:14px;line-height:1.6;">
-        Get instant eligibility results for reclaiming your music rights under U.S. copyright law.
+        Backed by proprietary rights data and AI that translates copyright law into plain English — get instant termination eligibility results in minutes.
       </div>
     </div>
     <div class="card">
@@ -1399,7 +1399,7 @@ h2.page-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:
         <div class="footer-logo">R</div>
         <div class="footer-brand-name">Rights Back<sup style="font-size:60%;top:-0.4em;">®</sup></div>
       </div>
-      <div class="footer-desc">Music rights intelligence and investment. Specialists in copyright termination under 17 U.S.C. §§203, 304(c), and 304(d).</div>
+      <div class="footer-desc">Built in collaboration with the copyright termination team at Alter, Wolff &amp; Foley LLP. Rights Back itself does not provide legal advice.</div>
     </div>
     <div>
       <div class="footer-col-title">Tool</div>
@@ -1419,8 +1419,8 @@ h2.page-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:
     </div>
   </div>
   <div class="footer-bottom">
-    <div class="footer-copy">© 2025 Rights Back Calculator. All rights reserved. For informational purposes only — not legal advice.</div>
-    <div class="footer-powered">POWERED BY <span>COPYRIGHT LAW AI</span></div>
+    <div class="footer-copy">© 2024–2025 Rights Back®. All rights reserved. For informational purposes only — not legal advice.</div>
+    <div class="footer-powered">RIGHTS BACK® &nbsp;·&nbsp; <span>NOT A LAW FIRM</span></div>
   </div>
 </footer>
 
@@ -1882,15 +1882,16 @@ function renderSongs() {
 
       <div class="divider"></div>
       <div class="sc-label">Key dates</div>
+      <div style="margin-bottom:14px;padding:11px 14px;background:#fffbeb;border:1px solid #fbbf24;border-radius:8px;font-size:12px;color:#b45309;line-height:1.7;"><strong>How we use your dates:</strong> We prioritize in this order — ① Grant/transfer date (your publishing contract) → ② First publication date (release) → ③ Copyright registration date. If you know the exact contract signing date, use that. If not, we'll estimate from the other dates you provide.</div>
  
       <div class="field-row">
         <div class="field">
-          <label>When did you sign the publishing deal? <span class="opt">optional</span></label>
+          <label>Grant/transfer date <span class="opt">optional — when you assigned or licensed your publishing rights</span></label>
           <input type="date" id="grantdate_${s.id}" value="${s.grantDate}" onchange="updateSong(${s.id},'grantDate',this.value)"/>
-          <div class="helper">Date you signed the publishing contract — <strong>not</strong> the USCO registration date. Check your original agreement.</div>
+          <div class="helper">The date you <strong>signed the contract assigning your publishing rights</strong>. If you know the exact contract signing date, use that. If not, we'll estimate based on registration and release dates.</div>
         </div>
         <div class="field">
-          <label>When was the song first released? <span class="opt">optional</span></label>
+          <label>First publication date <span class="opt">optional — commercial release or first public distribution</span></label>
           <input type="date" id="pubdate_${s.id}" value="${s.pubDate}" onchange="updateSong(${s.id},'pubDate',this.value)"/>
           <div class="helper">Commercial release / first public distribution date</div>
         </div>
@@ -1899,7 +1900,7 @@ function renderSongs() {
         <div class="field">
           <label>Copyright registration date <span class="opt">optional</span></label>
           <input type="date" id="copyrightdate_${s.id}" value="${s.copyrightDate}" onchange="updateSong(${s.id},'copyrightDate',this.value)"/>
-          <div class="helper">Date on your USCO registration certificate — different from your publishing contract date above.</div>
+          <div class="helper">Date on your USCO registration certificate. <strong>Date priority used for calculations:</strong> ① Grant/transfer date → ② First publication date → ③ Registration date.</div>
         </div>
 
       </div>
@@ -1916,7 +1917,7 @@ function renderSongs() {
       <div class="field">
         <label>Was this song created as a "work made for hire"? <span class="req">*</span></label>
         <div class="radio-group" id="wfh_${s.id}">${['yes','no','unsure'].map(v=>`<label class="radio-opt${s.workForHire===v?' selected':''}"><input type="radio" name="wfh_${s.id}" value="${v}" ${s.workForHire===v?'checked':''} onchange="updateRadio(${s.id},'workForHire','${v}')"/>${v[0].toUpperCase()+v.slice(1)}</label>`).join('')}</div>
-        <div class="helper">Work for hire = created as an employee or under a specific written commission agreement. If yes, termination rights do not apply.</div>
+        <div class="helper"><strong>If you created this as an employee or under a written 'work made for hire' agreement for a company, termination rights may not apply.</strong> This is not the same as being an independent contractor or informal co-writer — it requires a formal written agreement or employer–employee relationship.</div>
       </div>
       <div class="field">
         <label>Do you have a copy of the original contract? <span class="opt">optional</span></label>
@@ -2150,7 +2151,7 @@ function handleLookupResult(songId, data, type, resultDiv) {
     <div style="margin-top:10px;padding:9px 12px;background:#fffbeb;border:1px solid #fbbf24;border-radius:6px;font-size:12px;color:#b45309;line-height:1.5;">
       ⚠ The <strong>Copyright Registration Date</strong> above has been auto-filled from USCO records.
       This is <strong>not</strong> the same as your publishing contract (grant) date.
-      Please enter your actual contract date in the <strong>"When did you sign the publishing deal?"</strong> field above.
+      Please enter your actual contract date in the <strong>Grant/transfer date</strong> field above.
     </div>`;
  
   renderSongs();
@@ -2209,10 +2210,9 @@ else{
   const noticeOpen=addYears(termStart,-10),noticeClose=addYears(termEnd,-2);
   const missed=now>termEnd;
   let statusFlag,statusClass;
-  if(now<noticeOpen){statusFlag='Notice filing period not yet open';statusClass='flag-upcoming';}
+  if(now<noticeOpen){statusFlag='Notice filing period not yet open — window opens on '+fmtDate(noticeOpen);statusClass='flag-upcoming';}
   else if(now<=noticeClose){statusFlag='Notice filing period open — you may serve notice now';statusClass='flag-open';}
-  else if(!missed){statusFlag='Notice filing period closing soon';statusClass='flag-upcoming';}
-  else{statusFlag='Termination window passed';statusClass='flag-passed';}
+  else{statusFlag='Notice filing period closed — termination window has passed';statusClass='flag-passed';}
   
   const isApprox = !grant || (!pub && grant);
   return{regime:'203',termStart,termEnd,noticeOpen,noticeClose,recordationDeadline:termStart,statusFlag,statusClass,missed,isApprox};
@@ -2252,10 +2252,9 @@ function computeS304(s){
   const missed=now>termEnd;
   
   let statusFlag,statusClass;
-  if(now<noticeOpen){statusFlag='Notice filing period not yet open';statusClass='flag-upcoming';}
+  if(now<noticeOpen){statusFlag='Notice filing period not yet open — window opens on '+fmtDate(noticeOpen);statusClass='flag-upcoming';}
   else if(now<=noticeClose){statusFlag='Notice filing period open — you may serve notice now';statusClass='flag-open';}
-  else if(!missed){statusFlag='Notice filing period closing soon';statusClass='flag-upcoming';}
-  else{statusFlag='Termination window passed';statusClass='flag-passed';}
+  else{statusFlag='Notice filing period closed — termination window has passed';statusClass='flag-passed';}
   
   const isApprox = !pub;
   return{regime:'304',subsection,termStart,termEnd,noticeOpen,noticeClose,recordationDeadline:termStart,statusFlag,statusClass,missed,isApprox};
@@ -2344,23 +2343,19 @@ function renderResults(){
       ${t.isApprox ? `
       <div style="margin-top:10px;padding:10px 14px;background:#fffbeb;border:1px solid #fbbf24;border-radius:7px;font-size:12px;color:#b45309;line-height:1.5;">
         ⚠ <strong>Dates are estimated</strong> — calculated from your release date because no publishing contract date was entered.
-        For greater accuracy, enter the date you signed your publishing deal in the <strong>"When did you sign the publishing deal?"</strong> field and re-analyze.
+        For greater accuracy, enter your Grant/transfer date in the field above and re-analyze.
       </div>` : ''}
    ${t.missed ? `
   <p style="font-size:12px;margin-top:10px;color:var(--red);">
-    The statutory termination window appears to have passed. Monetization options may still be available — continue to the next step.
+    Notice filing period closed — termination window has passed. Monetization options may still be available — continue to the next step.
   </p>
 ` : (t.statusClass === 'flag-open' ? `
   <p style="font-size:12px;margin-top:10px;color:var(--blue);">
     You are in the <strong>notice-serving period</strong> — you can file your termination notice now. The copyright reverts on <strong>${fmtDate(t.termStart)}</strong> once the termination window opens.
   </p>
-` : (t.statusFlag === 'Notice filing period closing soon' ? `
-  <p style="font-size:12px;margin-top:10px;color:var(--amber);">
-    Your notice-filing window is <strong>closing soon</strong>. You must serve your termination notice before <strong>${fmtDate(t.noticeClose)}</strong>. Immediate action is recommended.
-  </p>
 ` : `
   <p style="font-size:12px;margin-top:10px;color:var(--green);">
-    The statutory termination window has not opened yet. Monetization options may still be available — continue to the next step.
+    The notice filing period has not yet opened. Your earliest notice date is <strong>${fmtDate(t.noticeOpen)}</strong>.
   </p>
 `))}
       </div>`;
