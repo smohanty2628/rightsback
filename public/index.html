@@ -2149,6 +2149,8 @@ if(grant && pub){
 else if(pub){
   termStart=addYears(pub,35);
 }
+
+
 else if(grant){
   termStart=addYears(grant,35);
 }
@@ -2161,7 +2163,7 @@ else{
   let statusFlag,statusClass;
   if(now<noticeOpen){statusFlag='Notice filing period not yet open — window opens on '+fmtDate(noticeOpen);statusClass='flag-upcoming';}
   else if(now<=noticeClose){statusFlag='Notice filing period open — you may serve notice now';statusClass='flag-open';}
-  else{statusFlag='Notice filing period closed — termination window has passed';statusClass='flag-passed';}
+  else{statusFlag='Notice filing period closed — filing deadline was '+fmtDate(noticeClose);statusClass='flag-passed';}
   
   const isApprox = !grant || (!pub && grant);
   return{regime:'203',termStart,termEnd,noticeOpen,noticeClose,recordationDeadline:termStart,statusFlag,statusClass,missed,isApprox};
@@ -2203,7 +2205,7 @@ function computeS304(s){
   let statusFlag,statusClass;
   if(now<noticeOpen){statusFlag='Notice filing period not yet open — window opens on '+fmtDate(noticeOpen);statusClass='flag-upcoming';}
   else if(now<=noticeClose){statusFlag='Notice filing period open — you may serve notice now';statusClass='flag-open';}
-  else{statusFlag='Notice filing period closed — termination window has passed';statusClass='flag-passed';}
+  else{statusFlag='Notice filing period closed — filing deadline was '+fmtDate(noticeClose);statusClass='flag-passed';}
   
   const isApprox = !pub;
   return{regime:'304',subsection,termStart,termEnd,noticeOpen,noticeClose,recordationDeadline:termStart,statusFlag,statusClass,missed,isApprox};
@@ -2296,7 +2298,7 @@ function renderResults(){
       </div>` : ''}
    ${t.statusClass === 'flag-passed' ? `
   <p style="font-size:12px;margin-top:10px;color:var(--red);">
-    Notice filing period closed — termination window has passed. Monetization options may still be available — continue to the next step.
+    The notice filing deadline has passed — you can no longer serve a termination notice for this work. Monetization options may still be available — continue to the next step.
   </p>
 ` : (t.statusClass === 'flag-open' ? `
   <p style="font-size:12px;margin-top:10px;color:var(--blue);">
