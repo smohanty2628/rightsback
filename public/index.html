@@ -1957,7 +1957,7 @@ function validateSongs() {
     
     if (!s.title.trim()) {
       errors.push(`Song title is required for ${songName}`);
-      highlightField(`title_${s.id}`);
+      highlightField(`songtitle_${s.id}`);
     }
     
     if (!s.grantByAuthor || s.grantByAuthor === '') {
@@ -2357,7 +2357,7 @@ function renderResults(){
   <p style="font-size:12px;margin-top:10px;color:var(--green);">
     The notice filing period has not yet opened. Your earliest notice date is <strong>${fmtDate(t.noticeOpen)}</strong>.
   </p>
-`))}
+`)}
       </div>`;
   }).join('');
 }
