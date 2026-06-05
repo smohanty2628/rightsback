@@ -8,7 +8,6 @@ const crypto = require('crypto');
 
 const { saveSubmission } = require('./storage');
 const { sendNotification } = require('./email');
-const { lookupByUSCO, lookupByISWC, lookupBySongTitle } = require('./lookup');
 const { analyzeSubmission } = require('./analysis');
 
 const dbSearch = require('./database-search');
@@ -49,13 +48,13 @@ const DATA_DIR = process.env.NODE_ENV === 'production'
   : path.join(__dirname, 'data');
 
 const SONGWRITER_LEADS_DIR = path.join(DATA_DIR, 'songwriter_leads');
-const DELETED_RECORDS_DIR = path.join(DATA_DIR, 'deleted_records');
+const DELETED_RECORDS_DIR  = path.join(DATA_DIR, 'deleted_records');
 
-const CSV_PATH = path.join(SONGWRITER_LEADS_DIR, 'submissions.csv');
+const CSV_PATH       = path.join(SONGWRITER_LEADS_DIR, 'submissions.csv');
 const CONTACTED_PATH = path.join(SONGWRITER_LEADS_DIR, 'contacted.json');
-const ANALYSIS_DIR = path.join(SONGWRITER_LEADS_DIR, 'analysis_records');
+const ANALYSIS_DIR   = path.join(SONGWRITER_LEADS_DIR, 'analysis_records');
 
-const archiveRoot = DELETED_RECORDS_DIR;
+const archiveRoot        = DELETED_RECORDS_DIR;
 const submissionsArchive = path.join(archiveRoot, 'submissions');
 
 console.log(`[INIT] 📁 Data directory: ${DATA_DIR}`);
@@ -122,7 +121,7 @@ function parseCSV(filePath) { return readCSVRaw(filePath).rows; }
 
 function writeCSV(filePath, headers, rows) {
   const headerLine = headers.join(',');
-  const bodyLines = rows.map(row => headers.map(h => escapeCSV(row[h] || '')).join(','));
+  const bodyLines  = rows.map(row => headers.map(h => escapeCSV(row[h] || '')).join(','));
   fs.writeFileSync(
     filePath,
     headerLine + '\n' + (bodyLines.length ? bodyLines.join('\n') + '\n' : ''),
@@ -156,8 +155,8 @@ function archiveSubmission(rowId, rowData, headers) {
   try {
     const timestamp = new Date().toISOString()
       .replace(/:/g, '-').replace(/\..+/, '').replace('T', '_');
-    const filename = `${timestamp}_deleted.csv`;
-    const filepath = path.join(submissionsArchive, filename);
+    const filename  = `${timestamp}_deleted.csv`;
+    const filepath  = path.join(submissionsArchive, filename);
     const archiveContent =
       headers.join(',') + '\n' +
       headers.map(h => escapeCSV(rowData[h] || '')).join(',') + '\n';
@@ -174,11 +173,11 @@ function deleteSubmissionRow(rowId) {
   const id = Number(rowId);
   if (!Number.isInteger(id) || id < 0) return { ok: false, error: 'Invalid row id' };
   const { headers, rows } = readCSVRaw(CSV_PATH);
-  if (!headers.length) return { ok: false, error: 'No submissions file found' };
+  if (!headers.length)   return { ok: false, error: 'No submissions file found' };
   if (id >= rows.length) return { ok: false, error: 'Row not found' };
-  const deletedRow = rows[id];
+  const deletedRow  = rows[id];
   const archivePath = archiveSubmission(id, deletedRow, headers);
-  const newRows = rows.filter((_, idx) => idx !== id);
+  const newRows     = rows.filter((_, idx) => idx !== id);
   writeCSV(CSV_PATH, headers, newRows);
   const oldContacted = getContacted();
   const newContacted = {};
@@ -193,16 +192,28 @@ function deleteSubmissionRow(rowId) {
   return { ok: true, archived: archivePath ? path.basename(archivePath) : null };
 }
 
+// ── FIX: buildStats correctly handles 3-state status flags ──────────────
+// Old: counted "not yet open" as windowOpen because it contains "open"
+// New: explicitly requires "open" but NOT "not yet"
+// Also renamed "missed" → "filingClosed" to match new badge wording
 function buildStats(rows) {
   const contacted = getContacted();
   return {
-    total: rows.length,
-    s203: rows.filter(r => r.routing_result === '203').length,
-    s304: rows.filter(r => r.routing_result === '304').length,
-    windowOpen: rows.filter(r => String(r.status_flag || '').toLowerCase().includes('open')).length,
-    missed: rows.filter(r => r.window_missed === 'yes').length,
+    total:       rows.length,
+    s203:        rows.filter(r => r.routing_result === '203').length,
+    s304:        rows.filter(r => r.routing_result === '304').length,
+    // FIX: "not yet open" contains "open" — must exclude it
+    windowOpen:  rows.filter(r => {
+      const f = String(r.status_flag || '').toLowerCase();
+      return f.includes('open') && !f.includes('not yet');
+    }).length,
+    // FIX: catch both old "passed" wording and new "filing deadline" wording
+    filingClosed: rows.filter(r => {
+      const f = String(r.status_flag || '').toLowerCase();
+      return f.includes('closed') || f.includes('filing deadline') || f.includes('passed') || r.window_missed === 'yes';
+    }).length,
     needsReview: rows.filter(r => r.routing_result === 'needs-review').length,
-    contacted: Object.values(contacted).filter(Boolean).length
+    contacted:   Object.values(contacted).filter(Boolean).length,
   };
 }
 
@@ -215,24 +226,17 @@ app.post('/api/submit', async (req, res) => {
   const startTime = Date.now();
   try {
     const { user, songs } = req.body || {};
-
-    if (!user || !user.email) {
+    if (!user || !user.email)
       return res.status(400).json({ ok: false, error: 'Email required' });
-    }
-    if (!Array.isArray(songs) || songs.length === 0) {
+    if (!Array.isArray(songs) || songs.length === 0)
       return res.status(400).json({ ok: false, error: 'At least one song is required' });
-    }
 
     const analysis_id = crypto.randomUUID();
-
-    // STEP 1: Save to CSV
     saveSubmission({ analysis_id, user, songs });
     console.log(`[SUBMIT] ✅ Saved in ${Date.now() - startTime}ms`);
 
-    // STEP 2: Respond immediately
     res.json({ ok: true, analysis_id, redirectTo: '/results' });
 
-    // STEP 3: Send email in background
     setImmediate(async () => {
       try {
         console.log('[EMAIL] 📧 Sending notification...');
@@ -243,12 +247,10 @@ app.post('/api/submit', async (req, res) => {
       }
     });
 
-    // ✅ STEP 4: Sync to Argus Music in background
     setImmediate(async () => {
       try {
-        const argusUrl = process.env.ARGUS_MUSIC_API_URL || 'http://localhost:5000/api/sync/from-rightsback';
+        const argusUrl  = process.env.ARGUS_MUSIC_API_URL || 'http://localhost:5000/api/sync/from-rightsback';
         const firstSong = songs && songs[0] ? songs[0] : {};
-
         const forwardData = {
           full_name:       user.name           || user.email.split('@')[0],
           email:           user.email,
@@ -257,20 +259,16 @@ app.post('/api/submit', async (req, res) => {
           ipi_number:      user.ipi            || null,
           pro_id:          user.pro_id         || null,
           song_title:      firstSong.title     || null,
-          artist_name:     firstSong.artist    || null,
+          artist_name:     firstSong.artistName|| null,
           release_year:    firstSong.year      || null,
         };
-
         console.log('[Argus Sync] 🔄 Sending to Argus Music...');
-
         const syncResponse = await fetch(argusUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(forwardData),
         });
-
         const syncResult = await syncResponse.json();
-
         if (syncResult.ok) {
           console.log('[Argus Sync] ✓', syncResult.message, '| matched:', syncResult.matched, '| csv:', syncResult.csv);
         } else {
@@ -322,9 +320,8 @@ app.post('/api/lookup/search-by-title', async (req, res) => {
 app.post('/api/analyze', async (req, res) => {
   try {
     const submissionData = req.body || {};
-    if (!submissionData.songTitle || !submissionData.songwriterName) {
+    if (!submissionData.songTitle || !submissionData.songwriterName)
       return res.status(400).json({ ok: false, error: 'Song title and songwriter name required' });
-    }
     const analysis = await analyzeSubmission(submissionData);
     if (submissionData.analysisId) {
       saveAnalysisRecord(submissionData.analysisId, {
@@ -344,16 +341,15 @@ app.post('/api/analyze', async (req, res) => {
 // ── Admin endpoints ───────────────────────────────────────────────────────────
 app.post('/api/admin/login', (req, res) => {
   const { username, password } = req.body || {};
-  if (username === ADMIN_USER && password === ADMIN_PASS) {
+  if (username === ADMIN_USER && password === ADMIN_PASS)
     return res.json({ ok: true, token: ADMIN_TOKEN });
-  }
   res.status(401).json({ ok: false, error: 'Invalid credentials' });
 });
 
 app.get('/api/admin/submissions', adminAuth, (req, res) => {
-  const rows = parseCSV(CSV_PATH);
+  const rows      = parseCSV(CSV_PATH);
   const contacted = getContacted();
-  const data = rows.map((r, i) => ({ ...r, contacted: contacted[String(i)] || false }));
+  const data      = rows.map((r, i) => ({ ...r, contacted: contacted[String(i)] || false }));
   res.json({ ok: true, data });
 });
 
@@ -389,7 +385,7 @@ app.get('/api/admin/analysis/:id', adminAuth, (req, res) => {
 app.post('/api/admin/delete-submission', adminAuth, (req, res) => {
   try {
     const { id } = req.body || {};
-    const result = deleteSubmissionRow(id);
+    const result  = deleteSubmissionRow(id);
     if (!result.ok) return res.status(400).json(result);
     res.json({ ok: true, archived: result.archived });
   } catch (err) {
@@ -410,11 +406,4 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`   Data Directory: ${DATA_DIR}`);
   console.log(`   Admin Panel: /admin\n`);
-}).on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`[ERROR] Port ${PORT} already in use — exiting cleanly`);
-    process.exit(1);
-  } else {
-    throw err;
-  }
 });
