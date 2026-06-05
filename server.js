@@ -410,4 +410,11 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`   Data Directory: ${DATA_DIR}`);
   console.log(`   Admin Panel: /admin\n`);
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[ERROR] Port ${PORT} already in use — exiting cleanly`);
+    process.exit(1);
+  } else {
+    throw err;
+  }
 });
