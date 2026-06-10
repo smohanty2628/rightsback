@@ -1626,12 +1626,12 @@ function goTo(n) {
 
   if (n === 4) {
     document.body.classList.add('processing-active');
-    document.querySelector('a[href="/help.html"]').style.display = 'none'; // ← ADD
     setTimeout(() => animateProcessing(), 100);
   } else {
     document.body.classList.remove('processing-active');
-    document.querySelector('a[href="/help.html"]').style.display = 'flex';  // ← ADD
   }
+  const helpBtn = document.getElementById('helpBtn');
+  if (helpBtn) helpBtn.style.display = n === 3 ? 'flex' : 'none';
 
   window.scrollTo({top:0,behavior:'instant'});
 }
@@ -2464,28 +2464,32 @@ async function submitForm(){
 
 updateProgress();
 </script>
-<!-- HELP FLOATING BUTTON -->
-<a href="/help.html" title="Help & Glossary" style="
+<!-- HELP FLOATING BUTTON — shows only on Step 3 (Song Details) -->
+<a href="/help.html" id="helpBtn" target="_blank" title="Help & Glossary" style="
   position:fixed;
   bottom:28px;
   right:28px;
-  width:52px;
-  height:52px;
-  background:#1a1a18;
-  border-radius:50%;
-  display:flex;
+  display:none;
   align-items:center;
-  justify-content:center;
+  gap:8px;
+  background:#1a1a18;
+  color:#f5f0e8;
+  border-radius:24px;
+  padding:11px 20px;
+  font-family:'DM Sans',sans-serif;
+  font-size:13px;
+  font-weight:500;
+  text-decoration:none;
   box-shadow:0 4px 16px rgba(0,0,0,0.25);
   z-index:8000;
-  text-decoration:none;
   transition:background .2s, transform .2s;
-" onmouseover="this.style.background='#2c2c28';this.style.transform='scale(1.08)'"
-   onmouseout="this.style.background='#1a1a18';this.style.transform='scale(1)'">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+" onmouseover="this.style.background='#2c2c28';this.style.transform='translateY(-2px)'"
+   onmouseout="this.style.background='#1a1a18';this.style.transform='translateY(0)'">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
     <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 14.5 2.9 16.8 4.4 18.6L2 22L6.3 20.7C8 21.5 9.9 22 12 22Z" stroke="#f5f0e8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M8 10H8.01M12 10H12.01M16 10H16.01" stroke="#f5f0e8" stroke-width="2" stroke-linecap="round"/>
   </svg>
+  Need Help?
 </a>
 </body>
 </html>
