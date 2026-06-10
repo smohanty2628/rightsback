@@ -16,7 +16,6 @@
   }
   body{font-family:'DM Sans',sans-serif;background:var(--parchment);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.6;}
 
-  /* ── HEADER (matches privacy-policy.html exactly) ── */
   header{background:var(--dark);padding:20px 48px;display:flex;align-items:center;justify-content:space-between;}
   .brand{display:flex;align-items:center;gap:10px;text-decoration:none;}
   .brand-logo{width:32px;height:32px;border-radius:6px;background:var(--parchment);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--dark);}
@@ -26,7 +25,6 @@
   .back-link:hover{color:var(--parchment);}
   @media(max-width:600px){header{padding:16px 20px;}.back-link{font-size:10px;}}
 
-  /* ── PAGE LAYOUT ── */
   .page{max-width:760px;margin:0 auto;padding:60px 24px 80px;}
   .page-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.16em;text-transform:uppercase;margin-bottom:12px;}
   h1{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:700;color:var(--dark);letter-spacing:-0.02em;margin-bottom:8px;}
@@ -40,18 +38,14 @@
   a{color:var(--blue);text-decoration:underline;}
   a:hover{color:var(--dark);}
 
-  /* ── CALLOUT BOXES ── */
   .box{border-radius:10px;padding:18px 22px;margin:20px 0;line-height:1.7;}
   .box-green{background:var(--green-bg);border:1px solid var(--green-border);}
   .box-green .box-head{font-weight:700;font-size:14px;color:var(--green);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
   .box-green p,.box-green li{color:#166534;font-size:13px;}
   .box-amber{background:var(--amber-bg);border:1px solid var(--amber-border);}
-  .box-amber .box-head{font-weight:700;font-size:14px;color:var(--amber);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+  .box-amber .box-head{font-weight:700;font-size:14px;color:var(--amber);margin-bottom:6px;}
   .box-amber p{color:#92400e;font-size:13px;margin:0;}
-  .highlight-box{background:#fff;border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin:24px 0;}
-  .highlight-box p{margin:0;font-size:13px;color:var(--muted);}
 
-  /* ── STEP LIST (numbered tutorial steps) ── */
   .step-list{display:flex;flex-direction:column;gap:14px;margin:16px 0 24px;}
   .step-item{display:flex;gap:14px;align-items:flex-start;}
   .step-badge{width:26px;height:26px;border-radius:50%;background:var(--dark);color:var(--parchment);font-family:'DM Mono',monospace;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
@@ -59,10 +53,8 @@
   .step-body strong{font-size:14px;color:var(--dark);display:block;margin-bottom:3px;}
   .step-body span{font-size:13px;color:#5a5650;line-height:1.6;}
 
-  /* ── DIVIDER ── */
   .section-divider{border:none;border-top:1px solid var(--border);margin:40px 0 0;}
 
-  /* ── ACCORDION ── */
   .accordion{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff;margin-bottom:10px;}
   .acc-item{border-bottom:1px solid #f0ece4;}
   .acc-item:last-child{border-bottom:none;}
@@ -71,22 +63,20 @@
   .acc-btn-left{flex:1;}
   .acc-term{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--dark);line-height:1.3;margin-bottom:3px;}
   .acc-short{font-size:12px;color:var(--muted);line-height:1.5;}
-  .acc-chevron{width:26px;height:26px;border-radius:50%;background:#f0ece4;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:3px;transition:background .2s,transform .25s;}
+  .acc-chevron{width:26px;height:26px;border-radius:50%;background:#f0ece4;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:3px;transition:background .2s;}
   .acc-chevron svg{transition:transform .25s;}
   .acc-item.open .acc-chevron{background:var(--dark);}
   .acc-item.open .acc-chevron svg{transform:rotate(180deg);}
   .acc-item.open .acc-chevron path{stroke:#f5f0e8;}
-  .acc-body{display:none;padding:0 22px 20px;font-size:14px;color:#3a3a36;line-height:1.8;white-space:pre-line;}
+  .acc-body{display:none;padding:0 22px 20px;font-size:14px;color:#3a3a36;line-height:1.8;}
   .acc-item.open .acc-body{display:block;}
 
-  /* ── CTA BLOCK ── */
   .cta-block{background:var(--dark);border-radius:12px;padding:32px 36px;text-align:center;margin-top:44px;}
   .cta-block h3{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--parchment);margin-bottom:8px;}
   .cta-block p{font-size:13px;color:#7a7468;margin-bottom:20px;}
   .cta-btn{display:inline-block;background:var(--parchment);color:var(--dark);font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none;letter-spacing:0.02em;transition:background .15s;}
   .cta-btn:hover{background:#fff;color:var(--dark);}
 
-  /* ── FOOTER (matches privacy-policy.html exactly) ── */
   footer{background:var(--dark);padding:24px 48px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:#555550;letter-spacing:0.06em;}
   footer a{color:#888882;text-decoration:none;}
   footer a:hover{color:var(--parchment);}
@@ -94,7 +84,6 @@
 </head>
 <body>
 
-<!-- HEADER -->
 <header>
   <a href="/" class="brand">
     <div class="brand-logo">R</div>
@@ -103,138 +92,131 @@
       <div class="brand-sub">Copyright Reversion Tool</div>
     </div>
   </a>
-  <a href="/" class="back-link">← Back to tool</a>
+  <a href="/" class="back-link" onclick="if(history.length>1){history.back();return false;}">← Back to tool</a>
 </header>
 
-<!-- PAGE BODY -->
 <div class="page">
 
   <div class="page-label">Help Center</div>
   <h1>Music Rights 101</h1>
-  <div class="effective">Plain-language answers for songwriters using Rights Back® &nbsp;·&nbsp; Not legal advice</div>
+  <div class="effective">Plain answers for songwriters using Rights Back® &nbsp;·&nbsp; Not legal advice</div>
 
-  <!-- ── SECTION 1: WHERE TO FIND YOUR DATES ── -->
   <h2><span class="h2-num">01</span> Where to find your dates</h2>
-  <p>Two dates drive your termination eligibility calculation: your <strong>copyright registration date</strong> and your <strong>release date</strong>. If you don't know either one — don't worry. Our calculator can find both for you automatically.</p>
 
-  <!-- GREEN AUTO-SEARCH CALLOUT -->
+  <p>To check your eligibility, we need two things: when your song was <strong>registered with the Copyright Office</strong> and when it was <strong>released</strong>. If you don't know either one, that's okay. Just enter your song title and we'll look it up for you.</p>
+
   <div class="box box-green">
-    <div class="box-head">🔍 Easiest option — let us find it for you</div>
-    <p>On the song details step, type your song title and click <strong>Search →</strong>. Our system searches our database of <strong>4.5 million+ U.S. Copyright Office records</strong> and returns the registration number, registration date, and release year automatically — no manual lookup needed.</p>
+    <div class="box-head">🔍 The easiest way — let us find it for you</div>
+    <p>On the song details page, type your song title and click <strong>Search</strong>. We search our database of <strong>4.5 million+ U.S. Copyright Office records</strong> and fill in the registration number, registration date, and release year for you. You don't need to look anything up yourself.</p>
   </div>
 
-  <p>If the search doesn't find your song, or if you want to verify the information yourself, here's where to look:</p>
+  <p>If we can't find your song, or you want to double-check the information, here's how to find it on your own:</p>
 
-  <!-- HOW TO FIND: USCO REG NUMBER -->
-  <h3>Finding your USCO copyright registration number</h3>
+  <h3>How to find your copyright registration number</h3>
   <div class="step-list">
     <div class="step-item">
       <div class="step-badge">1</div>
       <div class="step-body">
-        <strong>Go to Publicrecords.copyright.gov</strong>
-        <span>This is the U.S. Copyright Office's free public search. It covers musical works registered from the 1970s onward.</span>
+        <strong>Go to <a href="https://publicrecords.copyright.gov/" target="_blank" rel="noopener">publicrecords.copyright.gov</a></strong>
+        <span>This is the U.S. Copyright Office's free search tool. It's open to the public and covers songs registered from the 1970s onward.</span>
       </div>
     </div>
     <div class="step-item">
       <div class="step-badge">2</div>
       <div class="step-body">
-        <strong>Select "Title" from the search type dropdown</strong>
-        <span>Type your song title exactly as it appears on the original recording or sheet music. Try different spellings if needed.</span>
+        <strong>Search by song title</strong>
+        <span>Type your song title exactly as it was originally published. If nothing comes up, try a slightly different spelling.</span>
       </div>
     </div>
     <div class="step-item">
       <div class="step-badge">3</div>
       <div class="step-body">
-        <strong>Look for records with type "PA" or "PAu"</strong>
-        <span>"PA" means Performing Arts — this is the category for musical compositions. The registration number will look like <em>PA 1-234-567</em> or <em>PAu 3-000-000</em>.</span>
+        <strong>Look for results that say "PA" or "PAu"</strong>
+        <span>PA stands for Performing Arts. That's the category for songs and musical compositions. The number will look something like <em>PA 1-234-567</em>.</span>
       </div>
     </div>
     <div class="step-item">
       <div class="step-badge">4</div>
       <div class="step-body">
-        <strong>Note the registration date and claimant name</strong>
-        <span>The date the copyright was registered and the original claimant (publisher or songwriter) are both shown in the record. Copy these into the Rights Back® form.</span>
+        <strong>Write down the registration date and the name of the claimant</strong>
+        <span>The claimant is usually your old publisher or your name. Both the date and the name will be shown in the record. Copy these into the Rights Back form.</span>
       </div>
     </div>
   </div>
 
   <div class="box box-amber">
-    <div class="box-head">⚠ Important: registration date ≠ grant date</div>
-    <p>The copyright registration date is <em>not</em> the same as the date you signed your publishing deal. Your publishing contract (grant/transfer date) is usually earlier. If you know when you signed the contract, enter that date in the <strong>Grant/transfer date</strong> field — it's the most accurate starting point for the calculation.</p>
+    <div class="box-head">⚠ One thing to keep in mind</div>
+    <p>The copyright registration date is not the same as the date you signed your publishing deal. Your contract was usually signed before the song was registered. If you know the date you signed your publishing contract, use that in the <strong>Grant/transfer date</strong> field. It gives us the most accurate result.</p>
   </div>
 
-  <!-- HOW TO FIND: RELEASE DATE -->
-  <h3>Finding your song's release date</h3>
+  <h3>How to find your song's release date</h3>
   <div class="step-list">
     <div class="step-item">
       <div class="step-badge">1</div>
       <div class="step-body">
-        <strong>Check AllMusic — allmusic.com</strong>
-        <span>Search for the album or single. AllMusic has detailed release histories for recordings going back to the 1950s, including original release dates and re-issues.</span>
+        <strong>Check AllMusic at allmusic.com</strong>
+        <span>Search for your song or album. AllMusic has release dates going all the way back to the 1950s, including original release dates and any re-releases.</span>
       </div>
     </div>
     <div class="step-item">
       <div class="step-badge">2</div>
       <div class="step-body">
-        <strong>Check Discogs — discogs.com</strong>
-        <span>Discogs is a user-maintained music database with vinyl, CD, and digital release dates. It's especially strong for singles and B-sides from the 1960s–1990s.</span>
+        <strong>Check Discogs at discogs.com</strong>
+        <span>Discogs is great for finding exact release dates on vinyl, CD, and digital formats. It's especially helpful for singles and older recordings from the 1960s through the 1990s.</span>
       </div>
     </div>
     <div class="step-item">
       <div class="step-badge">3</div>
       <div class="step-body">
-        <strong>Check Billboard archives — billboard.com/charts/year-end</strong>
-        <span>If your song charted, the Billboard archives will show the chart year, which gives you a reliable release year even if you don't have the exact date.</span>
+        <strong>Check Billboard archives at billboard.com/charts/year-end</strong>
+        <span>If your song charted, Billboard's archives will show you the year. Even if you don't have the exact date, the year is enough to get started.</span>
       </div>
     </div>
     <div class="step-item">
       <div class="step-badge">4</div>
       <div class="step-body">
-        <strong>Check the album liner notes or original contract</strong>
-        <span>Physical copies of the original album often include a copyright year on the back cover (e.g., © 1978). Your original contract or royalty statements may also list the recording date.</span>
+        <strong>Check the original album or your old contract</strong>
+        <span>The back cover of a vinyl or CD usually shows a copyright year like © 1978. Your original publishing contract or royalty statements may also list a recording or release date.</span>
       </div>
     </div>
   </div>
 
   <hr class="section-divider"/>
 
-  <!-- ── SECTION 2: GLOSSARY ── -->
-  <h2 style="margin-top:40px;"><span class="h2-num">02</span> Music Business Glossary</h2>
-  <p>Click any term to expand the explanation. These cover the concepts behind your eligibility check.</p>
+  <h2 style="margin-top:40px;"><span class="h2-num">02</span> Music Business Terms Explained</h2>
+  <p>If some of the words on this site are unfamiliar, here's what they mean. Click any term to read more.</p>
 
-  <!-- ACCORDION: GLOSSARY -->
   <div class="accordion" id="glossary">
 
     <div class="acc-item">
       <button class="acc-btn" onclick="toggle(this)">
         <div class="acc-btn-left">
           <div class="acc-term">Music Publishing</div>
-          <div class="acc-short">Who owns the right to copy, distribute, and license your song.</div>
+          <div class="acc-short">Who owns the right to use and earn money from your song.</div>
         </div>
         <div class="acc-chevron"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="#5a5248" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </button>
-      <div class="acc-body">When you write a song, you own the "publishing rights" — the right to reproduce the song, license it for movies, TV, and ads, and collect royalties when it's performed publicly or streamed.
-
-Most songwriters in the 1970s–1990s signed publishing deals that transferred these rights to a music publisher for a set number of years — or permanently. The publisher collected all the income the song generated and paid the songwriter a percentage (typically 50%).
-
-This is the right that the Copyright Termination Act allows you to reclaim.</div>
+      <div class="acc-body">
+        <p>When you write a song, you automatically own the "publishing rights." That means you own the right to copy it, license it for movies or TV, and collect royalties whenever it's played or streamed.</p>
+        <p>Most songwriters in the 1970s through the 1990s signed deals that handed these rights over to a music publisher. The publisher would then collect all the money the song made and pay the songwriter their share, usually around 50%.</p>
+        <p>The good news is that federal law gives you the right to take those publishing rights back. That's what Rights Back is designed to help you do.</p>
+      </div>
     </div>
 
     <div class="acc-item">
       <button class="acc-btn" onclick="toggle(this)">
         <div class="acc-btn-left">
           <div class="acc-term">Master Recording vs. Publishing Rights</div>
-          <div class="acc-short">Two separate rights live in every recorded song — and they belong to different people.</div>
+          <div class="acc-short">Every song has two separate sets of rights, and they usually belong to different people.</div>
         </div>
         <div class="acc-chevron"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="#5a5248" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </button>
-      <div class="acc-body">Every commercially released song has two separate copyrights:
-
-1. The Master Recording — the actual recorded performance (the specific studio recording on vinyl, CD, or streaming). Typically owned by the record label.
-
-2. The Publishing / Composition — the underlying song itself: the melody, lyrics, and structure. This is owned by the songwriter or their publisher.
-
-Rights Back® focuses on publishing rights. Even if a label owns the master recording of your song, you (or your heirs) may be able to reclaim the publishing copyright through termination.</div>
+      <div class="acc-body">
+        <p>Every recorded song actually has two separate copyrights:</p>
+        <p><strong>The Master Recording</strong> is the actual audio recording, the specific version you hear on a record or streaming service. The record label usually owns this.</p>
+        <p><strong>The Publishing Rights</strong> cover the song itself, the melody and the lyrics. This is what the songwriter originally owned before signing a publishing deal.</p>
+        <p>Rights Back focuses on publishing rights. Even if a label owns the master recording, you may still be able to get the publishing rights back.</p>
+      </div>
     </div>
 
     <div class="acc-item">
@@ -245,142 +227,141 @@ Rights Back® focuses on publishing rights. Even if a label owns the master reco
         </div>
         <div class="acc-chevron"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="#5a5248" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </button>
-      <div class="acc-body">A copyright assignment is a contract where you formally transfer ownership of your copyright — or a portion of it — to another party (usually a publisher or label).
-
-Most publishing contracts from the 1970s–1990s were assignments. You handed over the rights, and in return received an advance against future royalties.
-
-The Copyright Termination Act (17 U.S.C. §203) was specifically designed to allow songwriters to undo these assignments after a waiting period, regardless of what the contract said. The law recognizes that songwriters often had little bargaining power when they signed these deals.</div>
+      <div class="acc-body">
+        <p>A copyright assignment is simply the contract where you transferred ownership of your song to someone else, usually a publisher or record label. In return, you typically received an advance payment against future royalties.</p>
+        <p>Most publishing deals from the 1970s through the 1990s were structured as assignments. Many of them were labeled "permanent," meaning the publisher would own the rights forever.</p>
+        <p>Federal law was updated specifically to let songwriters undo these assignments after enough time has passed. The law recognizes that most songwriters had very little negotiating power when they signed those deals.</p>
+      </div>
     </div>
 
     <div class="acc-item">
       <button class="acc-btn" onclick="toggle(this)">
         <div class="acc-btn-left">
           <div class="acc-term">Work for Hire</div>
-          <div class="acc-short">If your contract said "work for hire," your termination rights may still apply — it depends.</div>
+          <div class="acc-short">Your contract may have said "work for hire," but that does not always mean you have no rights.</div>
         </div>
         <div class="acc-chevron"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="#5a5248" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </button>
-      <div class="acc-body">A "work for hire" clause means the person who paid for the work — not the person who created it — is considered the legal author under copyright law.
-
-For music specifically: most courts have found that songs written by independent songwriters are NOT works for hire, even if the contract said so. A true work-for-hire relationship requires you to have been an actual employee of the company, not a freelance creator.
-
-This is important because works-for-hire are NOT eligible for copyright termination. If your old contract included this language, it doesn't automatically mean you're locked out — it means you should consult an entertainment attorney to evaluate your specific situation.</div>
+      <div class="acc-body">
+        <p>A "work for hire" clause means the company that paid for the work is treated as the legal author, not the actual creator. Under copyright law, works made for hire are not eligible for termination rights.</p>
+        <p>However, most courts have ruled that independent songwriters are not employees, even if their contracts used the phrase "work for hire." A real work-for-hire situation requires a formal employer-employee relationship, not just a freelance or one-off deal.</p>
+        <p>So if your old contract had this language, it does not automatically mean you've lost your rights. It just means your situation needs a closer look. We recommend speaking with an entertainment attorney to find out where you stand.</p>
+      </div>
     </div>
 
     <div class="acc-item">
       <button class="acc-btn" onclick="toggle(this)">
         <div class="acc-btn-left">
           <div class="acc-term">Copyright Registration</div>
-          <div class="acc-short">The official record of your copyright filed with the U.S. Copyright Office.</div>
+          <div class="acc-short">The official record of your song at the U.S. Copyright Office.</div>
         </div>
         <div class="acc-chevron"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="#5a5248" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </button>
-      <div class="acc-body">Copyright registration is the formal filing of your song with the U.S. Copyright Office (USCO). You receive a registration number (e.g., PA 1-234-567) as proof of ownership and the date your copyright was recorded.
-
-Registration is not required to own a copyright — you own it the moment you create the work. But it is required to file a lawsuit for infringement, and it creates the official public record that termination notices reference.
-
-Rights Back® automatically searches our database of 4.5 million+ USCO copyright registrations. Just enter your song title and we'll find the registration details for you — no manual searching required.</div>
+      <div class="acc-body">
+        <p>Copyright registration is the process of officially recording your song with the U.S. Copyright Office. When you register, you get a registration number like PA 1-234-567 and a certificate showing the date it was filed.</p>
+        <p>You don't have to register to own a copyright. Your rights exist the moment you write the song. But registration creates the official public record that termination notices rely on, and it's required if you ever want to sue someone for copying your work.</p>
+        <p>Rights Back searches our database of over 4.5 million copyright records. Just enter your song title and we'll find the registration details for you.</p>
+      </div>
     </div>
 
     <div class="acc-item">
       <button class="acc-btn" onclick="toggle(this)">
         <div class="acc-btn-left">
-          <div class="acc-term">Termination Rights — §203 &amp; §304</div>
-          <div class="acc-short">The federal law that lets songwriters reclaim rights they signed away — regardless of what the contract said.</div>
+          <div class="acc-term">Termination Rights (Section 203 and Section 304)</div>
+          <div class="acc-short">The federal law that lets you take back rights you signed away, no matter what your contract said.</div>
         </div>
         <div class="acc-chevron"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="#5a5248" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </button>
-      <div class="acc-body">The Copyright Act gives songwriters (and their heirs) a one-time window to reclaim rights they transferred — even if the contract was signed as a permanent assignment.
-
-§203 — Covers works assigned on or after January 1, 1978. Termination can be exercised between 35 and 40 years after the assignment date, with a proper notice filed 2–10 years in advance.
-
-§304(c) — Covers works published before January 1, 1978, where rights were assigned under the old Copyright Act. The termination window opens 56 years after the original copyright date.
-
-§304(d) — An extended window for §304(c) works if the §304(c) window was missed.
-
-The right belongs to the songwriter (or their heirs) and CANNOT be signed away in advance. Any contract clause that says "the songwriter waives termination rights" is unenforceable.</div>
+      <div class="acc-body">
+        <p>U.S. copyright law gives songwriters and their families a one-time chance to take back rights they transferred, even if the original contract said the transfer was permanent.</p>
+        <p><strong>Section 203</strong> applies to songs where rights were transferred on or after January 1, 1978. You can start the termination process between 35 and 40 years after the transfer, but you need to file a formal notice 2 to 10 years before you want the rights back.</p>
+        <p><strong>Section 304(c)</strong> applies to older songs published before 1978. The window to reclaim rights opens 56 years after the original copyright date.</p>
+        <p><strong>Section 304(d)</strong> is a second chance for songs that missed the Section 304(c) window.</p>
+        <p>This right belongs to you or your heirs. No contract can take it away. Even if you signed something that said you gave up your termination rights, that clause is not enforceable.</p>
+      </div>
     </div>
 
-  </div><!-- end glossary accordion -->
+  </div>
 
   <hr class="section-divider"/>
 
-  <!-- ── SECTION 3: COMMON QUESTIONS ── -->
   <h2 style="margin-top:40px;"><span class="h2-num">03</span> Common Questions</h2>
-  <p>Answers to what most songwriters ask before running their first check.</p>
+  <p>Here are the questions we hear most often from songwriters using this tool for the first time.</p>
 
   <div class="accordion" id="faqs">
 
     <div class="acc-item">
       <button class="acc-btn" onclick="toggle(this)">
         <div class="acc-btn-left">
-          <div class="acc-term">I don't have my USCO registration number. Can I still use Rights Back?</div>
-          <div class="acc-short"></div>
+          <div class="acc-term">I don't have my registration number. Can I still use Rights Back?</div>
         </div>
         <div class="acc-chevron"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="#5a5248" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </button>
-      <div class="acc-body">Yes — that's exactly what Rights Back® is built for. On the song details step, just type your song title and click Search →. Our system automatically searches our database of 4.5 million+ U.S. Copyright Office registration records and returns the registration number and registration date for you. No trip to copyright.gov needed.</div>
+      <div class="acc-body">
+        <p>Yes. You don't need it. On the song details page, just type your song title and click Search. We'll look it up in our database of 4.5 million copyright records and fill in the number and dates for you. Most people don't have their registration number handy, and that's completely fine.</p>
+      </div>
     </div>
 
     <div class="acc-item">
       <button class="acc-btn" onclick="toggle(this)">
         <div class="acc-btn-left">
-          <div class="acc-term">I don't know when my song was released. What do I do?</div>
-          <div class="acc-short"></div>
+          <div class="acc-term">I don't know the exact release date of my song. What should I do?</div>
         </div>
         <div class="acc-chevron"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="#5a5248" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </button>
-      <div class="acc-body">Use the title search in the form — we'll pull the release year from our records where available. If we can't find it automatically, try AllMusic (allmusic.com) or Discogs (discogs.com), both of which have detailed release histories for recordings going back to the 1950s. Billboard's year-end chart archives are another reliable source for charted songs.</div>
+      <div class="acc-body">
+        <p>Try the title search first. We pull release year information from our records where available. If we can't find it, AllMusic (allmusic.com) and Discogs (discogs.com) are good places to check. Both sites have detailed release histories going back decades. Even a rough year is enough to get started.</p>
+      </div>
     </div>
 
     <div class="acc-item">
       <button class="acc-btn" onclick="toggle(this)">
         <div class="acc-btn-left">
-          <div class="acc-term">What if my song isn't in your database?</div>
-          <div class="acc-short"></div>
+          <div class="acc-term">What happens if my song isn't in your database?</div>
         </div>
         <div class="acc-chevron"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="#5a5248" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </button>
-      <div class="acc-body">Our database covers the U.S. Copyright Office's public registration records. Not every song was formally registered — especially older recordings from small labels. If we can't find a registration, you'll see a "not found" message, and you can still complete the eligibility check by entering dates manually. A missing registration doesn't automatically make you ineligible.</div>
+      <div class="acc-body">
+        <p>Not every song was registered with the Copyright Office, especially older recordings from smaller labels. If we can't find yours, we'll tell you. You can still complete the eligibility check by filling in the dates yourself. Not being in our database does not mean you are ineligible.</p>
+      </div>
     </div>
 
     <div class="acc-item">
       <button class="acc-btn" onclick="toggle(this)">
         <div class="acc-btn-left">
-          <div class="acc-term">My contract said I was signing away rights permanently. Does that matter?</div>
-          <div class="acc-short"></div>
+          <div class="acc-term">My contract said I gave up my rights permanently. Does that mean it's too late?</div>
         </div>
         <div class="acc-chevron"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="#5a5248" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </button>
-      <div class="acc-body">No. The Copyright Termination Act was specifically designed to override permanent assignment clauses. Congress recognized that songwriters in the 1970s–1990s had little bargaining power. The right to terminate is set by federal law and cannot be taken away by contract language, no matter what you signed.</div>
+      <div class="acc-body">
+        <p>No. That's exactly what the Copyright Termination Act was written to fix. Congress knew that many songwriters signed deals with no real choice in the matter. The law says you can reclaim your rights regardless of what your contract said. A "permanent" assignment clause does not stop you from filing a termination notice.</p>
+      </div>
     </div>
 
     <div class="acc-item">
       <button class="acc-btn" onclick="toggle(this)">
         <div class="acc-btn-left">
-          <div class="acc-term">Can the heirs of a deceased songwriter use Rights Back?</div>
-          <div class="acc-short"></div>
+          <div class="acc-term">The original songwriter has passed away. Can family members still use this tool?</div>
         </div>
         <div class="acc-chevron"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="#5a5248" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </button>
-      <div class="acc-body">Yes. Termination rights pass to a songwriter's heirs — typically a surviving spouse, children, or grandchildren — in a specific order defined by the Copyright Act. If the original songwriter has passed away, their heirs may still be able to file a termination notice during the window. We recommend consulting an entertainment attorney to evaluate your specific family situation.</div>
+      <div class="acc-body">
+        <p>Yes. Termination rights can be passed on to family members, including a surviving spouse, children, or grandchildren. The law sets out a specific order for who inherits these rights. If the original songwriter has passed away, the family may still have a valid window to file. We recommend speaking with an entertainment attorney to understand exactly how the rights are divided in your situation.</p>
+      </div>
     </div>
 
-  </div><!-- end faq accordion -->
+  </div>
 
-  <!-- ── CTA ── -->
   <div class="cta-block">
     <h3>Ready to check your eligibility?</h3>
-    <p>Enter your song title and we'll handle the copyright lookup automatically.</p>
+    <p>Just enter your song title and we'll handle the rest.</p>
     <a href="/" class="cta-btn">Check My Song →</a>
   </div>
 
-  <!-- LEGAL DISCLAIMER -->
-  <p style="font-size:11px;color:var(--muted);line-height:1.6;margin-top:32px;padding-top:20px;border-top:1px solid var(--border);">This page is for informational and educational purposes only and does not constitute legal advice. Copyright termination rights are complex and time-sensitive. Consult a qualified entertainment attorney for your specific situation.</p>
+  <p style="font-size:11px;color:var(--muted);line-height:1.6;margin-top:32px;padding-top:20px;border-top:1px solid var(--border);">This page is for informational purposes only and does not constitute legal advice. Copyright termination is complex and time-sensitive. Please consult a qualified entertainment attorney for advice specific to your situation.</p>
 
-</div><!-- end .page -->
+</div>
 
-<!-- FOOTER (matches privacy-policy.html exactly) -->
 <footer>
   <div style="margin-bottom:10px;">
     <a href="/privacy-policy.html">Privacy Policy</a>
@@ -399,9 +380,7 @@ The right belongs to the songwriter (or their heirs) and CANNOT be signed away i
   function toggle(btn) {
     const item = btn.closest('.acc-item');
     const isOpen = item.classList.contains('open');
-    // Close all others in same accordion
     btn.closest('.accordion').querySelectorAll('.acc-item').forEach(i => i.classList.remove('open'));
-    // Toggle this one
     if (!isOpen) item.classList.add('open');
   }
 </script>
